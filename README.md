@@ -1,4 +1,4 @@
-# CafeSystem
+﻿# CafeSystem
 
 Sistema de gerenciamento de comandas para cafeterias/restaurantes simples.
 
@@ -64,19 +64,21 @@ Database (PostgreSQL)
 A solução será dividida em múltiplos projetos `.csproj`.
 
 ```
-CafeSystem.sln
+CafeSystem.slnx
 │
-├── CafeSystem.API
-├── CafeSystem.Application
-├── CafeSystem.Domain
-├── CafeSystem.Infrastructure
+├── ./app/
+│   ├── CafeSystem.API
+│   ├── CafeSystem.Application
+│   ├── CafeSystem.Domain
+│   ├── CafeSystem.Infrastructure
 │
-├── CafeSystem.API.UnitTests
-├── CafeSystem.Application.UnitTests
-├── CafeSystem.Domain.UnitTests
-├── CafeSystem.Infrastructure.UnitTests
-│
-└── CafeSystem.API.TestsEnd2End
+├── ./tests/
+│   ├── CafeSystem.API.UnitTests
+│   ├── CafeSystem.Application.UnitTests
+|   ├── CafeSystem.Domain.UnitTests
+│   ├── CafeSystem.Infrastructure.UnitTests
+│   │
+│   └── CafeSystem.API.TestsEnd2End
 ```
 
 ---
