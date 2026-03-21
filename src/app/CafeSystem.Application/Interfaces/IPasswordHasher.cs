@@ -6,8 +6,15 @@
     /// </summary>
     public interface IPasswordHasher
     {
-        string Hash(string password);
+        PasswordHashResult Hash(string password);
 
-        bool Verify(string hashedPassword, string providedPassword);
+        bool Verify(string hashedPassword, string salt, string providedPassword);
+    }
+
+    public sealed class PasswordHashResult
+    {
+        public string Hash { get; set; } = string.Empty;
+
+        public string Salt { get; set; } = string.Empty;
     }
 }

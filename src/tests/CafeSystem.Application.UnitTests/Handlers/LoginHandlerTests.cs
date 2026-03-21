@@ -45,6 +45,7 @@ namespace CafeSystem.Application.UnitTests.Handlers
                 Email = "john@example.com",
                 FullName = "John",
                 PasswordHash = "hashed-password",
+                PasswordSalt = "salt",
                 IsActive = true
             };
 
@@ -53,7 +54,7 @@ namespace CafeSystem.Application.UnitTests.Handlers
                 .ReturnsAsync(user);
 
             passwordHasherMock
-                .Setup(x => x.Verify("hashed-password", "secret"))
+                .Setup(x => x.Verify("hashed-password", "salt", "secret"))
                 .Returns(true);
 
             tokenServiceMock

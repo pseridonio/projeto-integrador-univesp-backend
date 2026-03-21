@@ -31,7 +31,7 @@ namespace CafeSystem.Application.Handlers
             if (user == null || !user.IsActive)
                 return null;
 
-            if (!_passwordHasher.Verify(user.PasswordHash, request.Password))
+            if (!_passwordHasher.Verify(user.PasswordHash, user.PasswordSalt, request.Password))
                 return null;
 
             string accessToken = _tokenService.GenerateAccessToken(user);

@@ -8,6 +8,7 @@
   </Folder>
   <Folder Name="/.docs/features/">
     <File Path="../.docs/features/Authorization.md" />
+    <File Path="../.docs/features/User-registration.md" />
   </Folder>
   <Folder Name="/app/">
     <Project Path="app/CafeSystem.API/CafeSystem.API.csproj" Id="a362dde8-86e5-42fa-95c0-fadf7d8e49e9" />
