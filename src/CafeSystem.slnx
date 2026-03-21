@@ -1,6 +1,13 @@
 <Solution>
   <Folder Name="/.docs/">
+    <File Path="../.docs/Architecture.md" />
+    <File Path="../.docs/Contributing.md" />
+    <File Path="../.docs/Testing.md" />
+    <File Path="../.github/COPILOT_INSTRUCTIONS.md" />
     <File Path="../README.md" />
+  </Folder>
+  <Folder Name="/.docs/features/">
+    <File Path="../.docs/features/Authorization.md" />
   </Folder>
   <Folder Name="/app/">
     <Project Path="app/CafeSystem.API/CafeSystem.API.csproj" Id="a362dde8-86e5-42fa-95c0-fadf7d8e49e9" />
