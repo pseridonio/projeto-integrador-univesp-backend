@@ -89,14 +89,24 @@ namespace CafeSystem.API
             CafeSystem.Application.Extensions.ServiceCollectionExtensions.ConfigureDI(builder.Services);
             CafeSystem.Infra.Extensions.ServiceCollectionExtensions.ConfigureDI(builder.Services);
             CafeSystem.API.Extensions.ServiceCollectionExtensions.ConfigureDI(builder.Services);
-            // DbContext: configure PostgreSQL using connection string from configuration
-            string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-            builder.Services.AddDbContext<CafeSystem.Infra.Persistence.AppDbContext>(options =>
+            if (builder.Environment.IsEnvironment("Testing"))
             {
-                options.UseNpgsql(connectionString, npgsql => {
-                    npgsql.EnableRetryOnFailure();
+                builder.Services.AddDbContext<CafeSystem.Infra.Persistence.AppDbContext>(options =>
+                {
+                    options.UseInMemoryDatabase("cafesystem-testing-db");
                 });
-            });
+            }
+            else
+            {
+                // DbContext: configure PostgreSQL using connection string from configuration
+                string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+                builder.Services.AddDbContext<CafeSystem.Infra.Persistence.AppDbContext>(options =>
+                {
+                    options.UseNpgsql(connectionString, npgsql => {
+                        npgsql.EnableRetryOnFailure();
+                    });
+                });
+            }
 
             Microsoft.AspNetCore.Builder.WebApplication app = builder.Build();
 

@@ -15,7 +15,11 @@ namespace CafeSystem.Domain.Entities
 
         public string PasswordHash { get; set; } = string.Empty;
 
+        public string PasswordSalt { get; set; } = string.Empty;
+
         public string FullName { get; set; } = string.Empty;
+
+        public DateOnly? BirthDate { get; set; }
 
         public bool IsActive { get; set; } = true;
 
