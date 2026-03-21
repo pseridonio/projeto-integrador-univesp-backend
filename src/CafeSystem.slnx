@@ -1,0 +1,24 @@
+<Solution>
+  <Folder Name="/.docs/">
+    <File Path="../.docs/Architecture.md" />
+    <File Path="../.docs/Contributing.md" />
+    <File Path="../.docs/Testing.md" />
+    <File Path="../.github/COPILOT_INSTRUCTIONS.md" />
+    <File Path="../README.md" />
+  </Folder>
+  <Folder Name="/.docs/features/">
+    <File Path="../.docs/features/Authorization.md" />
+  </Folder>
+  <Folder Name="/app/">
+    <Project Path="app/CafeSystem.API/CafeSystem.API.csproj" Id="a362dde8-86e5-42fa-95c0-fadf7d8e49e9" />
+    <Project Path="app/CafeSystem.Application/CafeSystem.Application.csproj" Id="22150f1a-b5af-4aa1-b174-1ba7cef8dbc8" />
+    <Project Path="app/CafeSystem.Domain/CafeSystem.Domain.csproj" Id="f31f3e25-16e2-4982-97e5-e87e5b7b0b93" />
+    <Project Path="app/CafeSystem.Infra/CafeSystem.Infra.csproj" Id="6f914c8f-78b4-42b3-9689-a3d1e819bb20" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CafeSystem.API.IntegrationTests/CafeSystem.API.IntegrationTests.csproj" Id="6851cbb5-5919-4b53-913e-41aeacac1282" />
+    <Project Path="tests/CafeSystem.Application.UnitTests/CafeSystem.Application.UnitTests.csproj" Id="d7325c5b-1b4f-4090-98b6-aca39b73d27b" />
+    <Project Path="tests/CafeSystem.Domain.UnitTests/CafeSystem.Domain.UnitTests.csproj" Id="1639ce2e-fae2-40e5-84e7-a597be1a3448" />
+    <Project Path="tests/CafeSystem.Infra.UnitTests/CafeSystem.Infra.UnitTests.csproj" Id="869adb42-a895-4ba7-87a6-a76ba0d0d693" />
+  </Folder>
+</Solution>
