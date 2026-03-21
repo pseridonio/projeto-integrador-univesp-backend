@@ -33,10 +33,20 @@ namespace CafeSystem.Infra.Persistence.Configurations
                 .HasColumnType("text")
                 .IsRequired();
 
+            builder.Property(u => u.PasswordSalt)
+                .HasColumnName("password_salt")
+                .HasColumnType("varchar(128)")
+                .IsRequired();
+
             builder.Property(u => u.FullName)
                 .HasColumnName("full_name")
-                .HasColumnType("varchar(255)")
+                .HasColumnType("varchar(250)")
                 .IsRequired();
+
+            builder.Property(u => u.BirthDate)
+                .HasColumnName("birth_date")
+                .HasColumnType("date")
+                .IsRequired(false);
 
             builder.Property(u => u.IsActive)
                 .HasColumnName("is_active")
@@ -63,6 +73,10 @@ namespace CafeSystem.Infra.Persistence.Configurations
                 .HasColumnName("roles")
                 .HasColumnType("jsonb")
                 .HasConversion(converter);
+
+            builder.HasIndex(u => u.Email)
+                .HasDatabaseName("ux_users_email")
+                .IsUnique();
         }
     }
 }
