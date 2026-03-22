@@ -398,7 +398,63 @@ Possíveis melhorias futuras:
 
 * Controle de acesso por perfil (RBAC)
 * Pagamentos com múltiplos métodos
-* Histórico de comandas
+
+---
+
+## Testcontainers (executando testes de integração)
+
+Os testes de integração do projeto utilizam `Testcontainers for .NET` para subir um container PostgreSQL isolado durante a execução dos testes.
+
+Pontos importantes:
+
+- Requisito: Docker instalado e funcionando. Em Windows, recomenda-se usar Docker Desktop com integração WSL2 ou expor o daemon do WSL em `tcp://localhost:2375` quando necessário.
+- O projeto de testes `tests/CafeSystem.API.IntegrationTests` já contém um `CustomWebApplicationFactory` que inicia um container PostgreSQL, aplica as migrations e injeta a `ConnectionStrings:DefaultConnection` para a aplicação sob teste.
+- Variáveis de ambiente úteis para ajustar o endpoint do Docker:
+  - `DOCKER_HOST` — por exemplo `tcp://localhost:2375`.
+  - `TESTCONTAINERS_HOST_OVERRIDE` — por exemplo `localhost`.
+
+Como executar os testes de integração localmente:
+
+1. Garanta que o Docker esteja disponível (localmente ou via WSL). Testcontainers precisa se conectar ao daemon Docker.
+2. Execute os testes de integração (PowerShell):
+
+```powershell
+dotnet test tests\CafeSystem.API.IntegrationTests -v d
+```
+
+Observações de segurança:
+
+- Expor o daemon Docker via TCP sem TLS é inseguro; faça apenas em ambientes de desenvolvimento local.
+- Em CI prefira runners com Docker local ou configure Testcontainers para usar o endpoint seguro do provedor de CI.
+
+---
+
+## Testcontainers (executando testes de integração)
+
+Os testes de integração do projeto utilizam `Testcontainers for .NET` para subir um container PostgreSQL isolado durante a execução dos testes.
+
+Pontos importantes:
+
+- Requisito: Docker instalado e funcionando. Em Windows, recomenda-se usar Docker Desktop com integração WSL2 ou expor o daemon do WSL em `tcp://localhost:2375` quando necessário.
+- O projeto de testes `tests/CafeSystem.API.IntegrationTests` já contém um `CustomWebApplicationFactory` que inicia um container PostgreSQL, aplica as migrations e injeta a `ConnectionStrings:DefaultConnection` para a aplicação sob teste.
+- Variáveis de ambiente úteis para ajustar o endpoint do Docker:
+  - `DOCKER_HOST` — por exemplo `tcp://localhost:2375`.
+  - `TESTCONTAINERS_HOST_OVERRIDE` — por exemplo `localhost`.
+
+Como executar os testes de integração localmente:
+
+1. Garanta que o Docker esteja disponível (localmente ou via WSL). Testcontainers precisa se conectar ao daemon Docker.
+2. Execute os testes de integração:
+
+```powershell
+dotnet test tests\CafeSystem.API.IntegrationTests -v d
+```
+
+Observações de segurança:
+
+- Expor o daemon Docker via TCP sem TLS é inseguro; faça apenas em ambientes de desenvolvimento local.
+- Em CI prefira runners com Docker local ou configure Testcontainers para usar o endpoint seguro do provedor de CI.
+
 * Relatórios de vendas
 * Dashboard administrativo
 * Evolução para microserviços
