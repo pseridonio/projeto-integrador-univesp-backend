@@ -13,10 +13,12 @@ namespace CafeSystem.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly RegisterHandler _registerHandler;
+        private readonly UpdateUserHandler _updateUserHandler;
 
-        public UsersController(RegisterHandler registerHandler)
+        public UsersController(RegisterHandler registerHandler, UpdateUserHandler updateUserHandler)
         {
             _registerHandler = registerHandler;
+            _updateUserHandler = updateUserHandler;
         }
 
         [HttpPost]
@@ -31,6 +33,24 @@ namespace CafeSystem.API.Controllers
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
+        {
+            try
+            {
+                CafeSystem.Domain.Entities.User user = await _updateUserHandler.HandleAsync(id, request, cancellationToken);
+                return Ok(new { code = user.Id });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(new { message = ex.Message });
             }
         }
     }

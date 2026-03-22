@@ -5,6 +5,7 @@
     <File Path="../.docs/Testing.md" />
     <File Path="../.github/COPILOT_INSTRUCTIONS.md" />
     <File Path="../README.md" />
+    <File Path=".github/copilot-instructions.md" />
   </Folder>
   <Folder Name="/.docs/features/">
     <File Path="../.docs/features/Authorization.md" />

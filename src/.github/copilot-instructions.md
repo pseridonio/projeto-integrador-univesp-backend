@@ -3,13 +3,14 @@
 ## Recomendações gerais
 
 - Seguir as decisões arquiteturais definidas em `.docs/Architecture.md` (Monólito Modular, DDD, Vertical Slice, separação de camadas).
+- Validar entradas na camada de API; manter regras de negócio na camada Application/Domain.
 - Sempre usar Dependency Injection e depender de abstrações (interfaces) — nunca injetar implementações concretas diretamente.
 - Habilitar e respeitar Nullable Reference Types; tratar `null` explicitamente.
-- Validar entradas na camada de API; manter regras de negócio na camada Application/Domain.
 - Implementações técnicas (ex.: EF Core, repositórios) devem ficar na pasta `Infrastructure`.
 - Nomes (identificadores) do código devem ser escritos em inglês. Comentários, documentação XML e descrições de OpenAPI devem ser em pt-BR com acentuação adequada.
 - Rotas de API e especificações OpenAPI devem estar em inglês e seguir OpenAPI 3.0.
-- Adicionar testes unitários para novas regras de negócio e handlers.
+- Adicionar testes unitários para novas regras de negócio e handlers, seguindo o padrão Arrange/Act/Assert e nomenclatura Should_<ExpectedBehavior>_When_<Condition>.
+- Evitar duplicação entre validadores e centralizar regras compartilhadas (ex.: validação de data de nascimento) em helper/base class reutilizável.
 
 Programando em C#
 ------------------
