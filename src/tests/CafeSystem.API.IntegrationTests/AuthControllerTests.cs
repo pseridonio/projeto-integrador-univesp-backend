@@ -1,9 +1,7 @@
-﻿using System.Net;
+﻿using FluentAssertions;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Threading.Tasks;
-using FluentAssertions;
-using Xunit;
 
 namespace CafeSystem.API.IntegrationTests
 {

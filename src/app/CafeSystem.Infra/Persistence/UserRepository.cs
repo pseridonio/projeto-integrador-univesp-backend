@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using CafeSystem.Application.Interfaces;
+﻿using CafeSystem.Application.Interfaces;
 using CafeSystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,6 +31,13 @@ namespace CafeSystem.Infra.Persistence
         public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             User? found = (User?)await _dbContext.Users.FindAsync(new object[] { id }, cancellationToken);
+            return found;
+        }
+
+        // Ensure the new method declared in interface is implemented
+        public async Task<User?> GetByIdNoTrackingAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            User? found = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
             return found;
         }
 

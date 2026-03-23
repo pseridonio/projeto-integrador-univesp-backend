@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using CafeSystem.Domain.Entities;
+﻿using CafeSystem.Domain.Entities;
 
 namespace CafeSystem.Application.Interfaces
 {
@@ -13,6 +10,8 @@ namespace CafeSystem.Application.Interfaces
         Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 
         Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+        Task<User?> GetByIdNoTrackingAsync(Guid id, CancellationToken cancellationToken = default);
 
         Task CreateAsync(User user, CancellationToken cancellationToken = default);
 

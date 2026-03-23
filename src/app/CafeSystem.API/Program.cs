@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using CafeSystem.Application.Interfaces;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +8,7 @@ namespace CafeSystem.API
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             Microsoft.AspNetCore.Builder.WebApplicationBuilder builder = WebApplication.CreateSlimBuilder(args);
 
@@ -102,7 +101,8 @@ namespace CafeSystem.API
                 string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
                 builder.Services.AddDbContext<CafeSystem.Infra.Persistence.AppDbContext>(options =>
                 {
-                    options.UseNpgsql(connectionString, npgsql => {
+                    options.UseNpgsql(connectionString, npgsql =>
+                    {
                         npgsql.EnableRetryOnFailure();
                     });
                 });
@@ -127,19 +127,20 @@ namespace CafeSystem.API
             bool applyMigrations = args != null && args.Any(a => a.Equals("--migrate", System.StringComparison.OrdinalIgnoreCase));
             if (applyMigrations)
             {
-                using (var scope = app.Services.CreateScope())
+                using (IServiceScope scope = app.Services.CreateScope())
                 {
                     Microsoft.Extensions.Logging.ILogger<Program> logger = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Program>>();
                     CafeSystem.Infra.Persistence.AppDbContext db = scope.ServiceProvider.GetRequiredService<CafeSystem.Infra.Persistence.AppDbContext>();
+                    IDatabaseInitializer databaseInitializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializer>();
 
                     logger.LogInformation("Applying EF Core migrations at startup...");
-                    db.Database.Migrate();
-                    logger.LogInformation("Migrations applied.");
+                    await db.Database.MigrateAsync();
+                    logger.LogInformation("Migrations applied. Executando rotina de seed...");
+                    await databaseInitializer.EnsureSeedDataAsync();
                 }
             }
 
-            
-            app.Run();
+            await app.RunAsync();
         }
     }
 }
