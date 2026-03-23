@@ -1,6 +1,4 @@
-﻿using System;
-using System.Globalization;
-using CafeSystem.Application.DTOs;
+﻿using CafeSystem.Application.DTOs;
 using FluentValidation;
 
 namespace CafeSystem.API.Validators
@@ -35,31 +33,9 @@ namespace CafeSystem.API.Validators
                 .WithMessage("Senha deve conter no máximo 20 caracteres");
 
             RuleFor(x => x.BirthDate)
-                .Must(BeValidBirthDate)
+                .Must(BirthDateValidationHelper.BeValidBirthDate)
                 .WithMessage("Data de nascimento inválida")
                 .When(x => !string.IsNullOrWhiteSpace(x.BirthDate));
-        }
-
-        private static bool BeValidBirthDate(string? birthDate)
-        {
-            if (string.IsNullOrWhiteSpace(birthDate))
-            {
-                return true;
-            }
-
-            bool isParsed = DateOnly.TryParseExact(
-                birthDate,
-                "yyyy-MM-dd",
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None,
-                out DateOnly parsedDate);
-
-            if (!isParsed)
-            {
-                return false;
-            }
-
-            return parsedDate < DateOnly.FromDateTime(DateTime.UtcNow.Date);
         }
     }
 }

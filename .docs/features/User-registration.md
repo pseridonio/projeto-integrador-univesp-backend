@@ -203,6 +203,100 @@ flowchart TD
 
 ---
 
+## Consulta de usuário por código
+
+### Objetivo
+
+Disponibilizar a consulta dos dados de um usuário específico a partir do seu identificador (`code`). A operação é protegida e requer token válido.
+
+### Endpoint
+
+- **Método:** `GET`
+- **Rota:** `/api/users/{code}`
+- **Segurança:** Header `Authorization: Bearer <token>` obrigatório.
+
+### Contrato de entrada
+
+Parâmetro de rota obrigatório:
+
+```text
+code — GUID do usuário
+```
+
+### Contrato de saída
+
+#### Sucesso (`200 OK`)
+
+```json
+{
+  "code": "<user-id-guid>",
+  "fullName": "Maria da Silva",
+  "email": "maria@email.com",
+  "birthDate": "1990-01-10"
+}
+```
+
+#### Erros
+
+| Status | Condição | Mensagem |
+| --- | --- | --- |
+| `400 BadRequest` | `code` não é GUID | `"Código informado é inválido"` |
+| `401 Unauthorized` | token ausente ou inválido | resposta padrão `Unauthorized` |
+| `404 NotFound` | usuário inexistente ou excluído logicamente | `"Usuário não encontrado."` |
+
+### Fluxo principal (sucesso)
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as API (/api/users/{code})
+    participant Filter as AuthorizationFilter
+    participant Handler as GetUserByIdHandler
+    participant Repo as UserRepository
+    participant DB as PostgreSQL
+
+    Client->>API: GET /api/users/{code} (Bearer token)
+    API->>Filter: Validar token
+    Filter-->>API: Token autorizado
+    API->>API: Validar GUID
+    API->>Handler: HandleAsync(code)
+    Handler->>Repo: GetByIdNoTrackingAsync(code)
+    Repo->>DB: SELECT users WHERE id = code
+    DB-->>Repo: Usuário ativo
+    Repo-->>Handler: User
+    Handler-->>API: DTO com dados
+    API-->>Client: 200 OK + payload
+```
+
+### Fluxos alternativos
+
+1. **Token ausente/inválido** → filtro retorna `401` e a requisição não alcança o controller.
+2. **`code` inválido** → controller responde `400` com mensagem específica.
+3. **Usuário inexistente ou `IsActive = false`/`DeletedAt != null`** → handler lança `NOT_FOUND` e controller transforma em `404`.
+
+### Regras e validações
+
+- `code` deve ser um GUID válido.
+- Usuário precisa estar autenticado com token ativo.
+- Usuário retornado deve estar ativo e não excluído logicamente (`IsActive = true` e `DeletedAt = null`).
+- A resposta sempre envia `birthDate` no formato `yyyy-MM-dd` quando disponível.
+
+### Diagrama de fluxo
+
+```mermaid
+flowchart TD
+    start([Receber GET /api/users/{code}]) --> validateToken{Token válido?}
+    validateToken -- "Não" --> unauthorized[Retornar 401 Unauthorized]
+    validateToken -- "Sim" --> validateCode{code é GUID?}
+    validateCode -- "Não" --> invalidCode[Retornar 400 Código informado é inválido]
+    validateCode -- "Sim" --> queryUser[Consultar usuário por ID]
+    queryUser --> checkStatus{Usuário existe e ativo?}
+    checkStatus -- "Não" --> notFound[Retornar 404 Usuário não encontrado]
+    checkStatus -- "Sim" --> success[Retornar 200 + dados do usuário]
+```
+
+---
+
 ## Observações de arquitetura
 
 - A validação de entrada ocorre na **API**.

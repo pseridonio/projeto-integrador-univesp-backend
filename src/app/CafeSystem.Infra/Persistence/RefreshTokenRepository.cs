@@ -1,9 +1,6 @@
-﻿using System.Threading.Tasks;
-using System.Threading;
-using CafeSystem.Application.Interfaces;
+﻿using CafeSystem.Application.Interfaces;
 using CafeSystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace CafeSystem.Infra.Persistence
 {
@@ -36,6 +33,22 @@ namespace CafeSystem.Infra.Persistence
             token.RevokedAt = DateTime.UtcNow;
             _dbContext.Set<RefreshToken>().Update(token);
             await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task<int> RevokeAllForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var tokens = await _dbContext.Set<RefreshToken>().Where(t => t.UserId == userId && t.RevokedAt == null).ToListAsync(cancellationToken);
+            foreach (var t in tokens)
+            {
+                t.RevokedAt = DateTime.UtcNow;
+            }
+            if (tokens.Count > 0)
+            {
+                _dbContext.Set<RefreshToken>().UpdateRange(tokens);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            return tokens.Count;
         }
     }
 }

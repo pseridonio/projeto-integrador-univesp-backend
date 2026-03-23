@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace CafeSystem.Domain.Entities
+﻿namespace CafeSystem.Domain.Entities
 {
     /// <summary>
     /// Entidade que representa um refresh token persistido no banco.

@@ -1,9 +1,8 @@
-﻿using System;
-using System.Security.Cryptography;
-using System.Text;
-using CafeSystem.Application.Interfaces;
+﻿using CafeSystem.Application.Interfaces;
 using Konscious.Security.Cryptography;
 using Microsoft.Extensions.Configuration;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace CafeSystem.Infra.Security
 {

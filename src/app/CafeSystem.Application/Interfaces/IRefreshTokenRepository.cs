@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using CafeSystem.Domain.Entities;
+﻿using CafeSystem.Domain.Entities;
 
 namespace CafeSystem.Application.Interfaces
 {
@@ -15,5 +12,7 @@ namespace CafeSystem.Application.Interfaces
         Task<RefreshToken?> GetByTokenAsync(string token, CancellationToken cancellationToken = default);
 
         Task RevokeAsync(RefreshToken token, CancellationToken cancellationToken = default);
+
+        Task<int> RevokeAllForUserAsync(Guid userId, CancellationToken cancellationToken = default);
     }
 }

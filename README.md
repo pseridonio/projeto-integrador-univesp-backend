@@ -265,6 +265,27 @@ Todas as tabelas ficarão no mesmo schema padrão.
 
 As entidades serão mapeadas via **Entity Framework Core**.
 
+## Inicialização do Projeto e Configuração da Conexão
+
+1. Configure a connection string `ConnectionStrings:DefaultConnection`.
+   * No modo local, ajuste `app/CafeSystem.API/appsettings.Development.json`.
+   * Em produção ou containers, defina a variável `ConnectionStrings__DefaultConnection` (ex.: `Host=localhost;Port=5432;Database=cafesystem;Username=postgres;Password=postgres`).
+2. Defina o pepper usado no hashing de senhas em `PasswordHashing:Pepper` (arquivo `appsettings.*` ou variável `PasswordHashing__Pepper`).
+3. Execute as migrations e a rotina de seed apenas na primeira execução (ou sempre que quiser garantir o usuário padrão) com:
+
+```powershell
+dotnet run --project app/CafeSystem.API -- --migrate
+```
+
+   Esse comando aplica as migrations pendentes e cria automaticamente o usuário administrador (`admin@admin.com` / senha inicial `ABC123*`) caso a tabela `users` esteja vazia. A senha é armazenada já com salt e pepper configurados.
+4. Inicie a API normalmente:
+
+```powershell
+dotnet run --project app/CafeSystem.API
+```
+
+   Após o primeiro login, altere a senha do usuário administrador via endpoints apropriados.
+
 ---
 
 # Autenticação
@@ -398,7 +419,63 @@ Possíveis melhorias futuras:
 
 * Controle de acesso por perfil (RBAC)
 * Pagamentos com múltiplos métodos
-* Histórico de comandas
+
+---
+
+## Testcontainers (executando testes de integração)
+
+Os testes de integração do projeto utilizam `Testcontainers for .NET` para subir um container PostgreSQL isolado durante a execução dos testes.
+
+Pontos importantes:
+
+- Requisito: Docker instalado e funcionando. Em Windows, recomenda-se usar Docker Desktop com integração WSL2 ou expor o daemon do WSL em `tcp://localhost:2375` quando necessário.
+- O projeto de testes `tests/CafeSystem.API.IntegrationTests` já contém um `CustomWebApplicationFactory` que inicia um container PostgreSQL, aplica as migrations e injeta a `ConnectionStrings:DefaultConnection` para a aplicação sob teste.
+- Variáveis de ambiente úteis para ajustar o endpoint do Docker:
+  - `DOCKER_HOST` — por exemplo `tcp://localhost:2375`.
+  - `TESTCONTAINERS_HOST_OVERRIDE` — por exemplo `localhost`.
+
+Como executar os testes de integração localmente:
+
+1. Garanta que o Docker esteja disponível (localmente ou via WSL). Testcontainers precisa se conectar ao daemon Docker.
+2. Execute os testes de integração (PowerShell):
+
+```powershell
+dotnet test tests\CafeSystem.API.IntegrationTests -v d
+```
+
+Observações de segurança:
+
+- Expor o daemon Docker via TCP sem TLS é inseguro; faça apenas em ambientes de desenvolvimento local.
+- Em CI prefira runners com Docker local ou configure Testcontainers para usar o endpoint seguro do provedor de CI.
+
+---
+
+## Testcontainers (executando testes de integração)
+
+Os testes de integração do projeto utilizam `Testcontainers for .NET` para subir um container PostgreSQL isolado durante a execução dos testes.
+
+Pontos importantes:
+
+- Requisito: Docker instalado e funcionando. Em Windows, recomenda-se usar Docker Desktop com integração WSL2 ou expor o daemon do WSL em `tcp://localhost:2375` quando necessário.
+- O projeto de testes `tests/CafeSystem.API.IntegrationTests` já contém um `CustomWebApplicationFactory` que inicia um container PostgreSQL, aplica as migrations e injeta a `ConnectionStrings:DefaultConnection` para a aplicação sob teste.
+- Variáveis de ambiente úteis para ajustar o endpoint do Docker:
+  - `DOCKER_HOST` — por exemplo `tcp://localhost:2375`.
+  - `TESTCONTAINERS_HOST_OVERRIDE` — por exemplo `localhost`.
+
+Como executar os testes de integração localmente:
+
+1. Garanta que o Docker esteja disponível (localmente ou via WSL). Testcontainers precisa se conectar ao daemon Docker.
+2. Execute os testes de integração:
+
+```powershell
+dotnet test tests\CafeSystem.API.IntegrationTests -v d
+```
+
+Observações de segurança:
+
+- Expor o daemon Docker via TCP sem TLS é inseguro; faça apenas em ambientes de desenvolvimento local.
+- Em CI prefira runners com Docker local ou configure Testcontainers para usar o endpoint seguro do provedor de CI.
+
 * Relatórios de vendas
 * Dashboard administrativo
 * Evolução para microserviços

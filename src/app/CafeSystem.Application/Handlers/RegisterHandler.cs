@@ -1,11 +1,8 @@
-﻿using System;
-using System.Globalization;
-using System.Net.Mail;
-using System.Threading;
-using System.Threading.Tasks;
-using CafeSystem.Application.DTOs;
+﻿using CafeSystem.Application.DTOs;
 using CafeSystem.Application.Interfaces;
 using CafeSystem.Domain.Entities;
+using System.Globalization;
+using System.Net.Mail;
 
 namespace CafeSystem.Application.Handlers
 {

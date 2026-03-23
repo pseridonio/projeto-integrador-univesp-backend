@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using CafeSystem.Domain.Entities;
+﻿using CafeSystem.Domain.Entities;
 
 namespace CafeSystem.Application.Interfaces
 {

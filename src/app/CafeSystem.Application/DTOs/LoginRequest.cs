@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace CafeSystem.Application.DTOs
+﻿namespace CafeSystem.Application.DTOs
 {
     /// <summary>
     /// Requisição para operação de login.
