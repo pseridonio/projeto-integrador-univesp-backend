@@ -1,12 +1,9 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using CafeSystem.Application.DTOs;
+﻿using CafeSystem.Application.DTOs;
 using CafeSystem.Application.Handlers;
 using CafeSystem.Application.Interfaces;
 using CafeSystem.Domain.Entities;
 using FluentAssertions;
 using Moq;
-using Xunit;
 
 namespace CafeSystem.Application.UnitTests.Handlers
 {

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace CafeSystem.Application.DTOs
+﻿namespace CafeSystem.Application.DTOs
 {
     /// <summary>
     /// Resposta de login contendo tokens e informações do usuário.

@@ -1,5 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using CafeSystem.Application.Handlers;
+﻿using CafeSystem.Application.Handlers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CafeSystem.Application.Extensions
 {

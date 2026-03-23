@@ -1,10 +1,7 @@
-﻿using System;
-using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
-using CafeSystem.Application.DTOs;
+﻿using CafeSystem.Application.DTOs;
 using CafeSystem.Application.Interfaces;
 using CafeSystem.Domain.Entities;
+using System.Globalization;
 
 namespace CafeSystem.Application.Handlers
 {

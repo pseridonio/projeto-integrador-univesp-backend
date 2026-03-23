@@ -1,9 +1,6 @@
-﻿using System.Threading.Tasks;
-using System.Threading;
-using CafeSystem.Application.Interfaces;
+﻿using CafeSystem.Application.Interfaces;
 using CafeSystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace CafeSystem.Infra.Persistence
 {

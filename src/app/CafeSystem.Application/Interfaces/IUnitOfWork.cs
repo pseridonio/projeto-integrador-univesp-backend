@@ -1,7 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-
-namespace CafeSystem.Application.Interfaces
+﻿namespace CafeSystem.Application.Interfaces
 {
     /// <summary>
     /// Unit of Work abstraction to coordinate transactions across repositories.

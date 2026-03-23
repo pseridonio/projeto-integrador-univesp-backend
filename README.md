@@ -265,6 +265,27 @@ Todas as tabelas ficarão no mesmo schema padrão.
 
 As entidades serão mapeadas via **Entity Framework Core**.
 
+## Inicialização do Projeto e Configuração da Conexão
+
+1. Configure a connection string `ConnectionStrings:DefaultConnection`.
+   * No modo local, ajuste `app/CafeSystem.API/appsettings.Development.json`.
+   * Em produção ou containers, defina a variável `ConnectionStrings__DefaultConnection` (ex.: `Host=localhost;Port=5432;Database=cafesystem;Username=postgres;Password=postgres`).
+2. Defina o pepper usado no hashing de senhas em `PasswordHashing:Pepper` (arquivo `appsettings.*` ou variável `PasswordHashing__Pepper`).
+3. Execute as migrations e a rotina de seed apenas na primeira execução (ou sempre que quiser garantir o usuário padrão) com:
+
+```powershell
+dotnet run --project app/CafeSystem.API -- --migrate
+```
+
+   Esse comando aplica as migrations pendentes e cria automaticamente o usuário administrador (`admin@admin.com` / senha inicial `ABC123*`) caso a tabela `users` esteja vazia. A senha é armazenada já com salt e pepper configurados.
+4. Inicie a API normalmente:
+
+```powershell
+dotnet run --project app/CafeSystem.API
+```
+
+   Após o primeiro login, altere a senha do usuário administrador via endpoints apropriados.
+
 ---
 
 # Autenticação

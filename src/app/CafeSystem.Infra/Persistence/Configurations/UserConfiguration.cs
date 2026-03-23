@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Text.Json;
-using CafeSystem.Domain.Entities;
+﻿using CafeSystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using System.Text.Json;
 
 namespace CafeSystem.Infra.Persistence.Configurations
 {

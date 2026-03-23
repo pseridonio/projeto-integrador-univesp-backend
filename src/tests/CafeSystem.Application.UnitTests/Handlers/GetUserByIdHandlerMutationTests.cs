@@ -1,13 +1,9 @@
-﻿using System;
-using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
-using CafeSystem.Application.Handlers;
+﻿using CafeSystem.Application.Handlers;
 using CafeSystem.Application.Interfaces;
 using CafeSystem.Domain.Entities;
 using FluentAssertions;
 using Moq;
-using Xunit;
+using System.Globalization;
 
 namespace CafeSystem.Application.UnitTests.Handlers
 {

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace CafeSystem.Application.DTOs
+﻿namespace CafeSystem.Application.DTOs
 {
     /// <summary>
     /// Resposta para renovação do token de acesso.

@@ -1,5 +1,4 @@
-﻿using System;
-using CafeSystem.Domain.Entities;
+﻿using CafeSystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace CafeSystem.Infra.Persistence

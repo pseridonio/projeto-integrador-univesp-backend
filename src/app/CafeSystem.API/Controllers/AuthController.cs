@@ -1,8 +1,7 @@
-﻿using System.Threading.Tasks;
-using CafeSystem.Application.DTOs;
+﻿using CafeSystem.Application.DTOs;
 using CafeSystem.Application.Handlers;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CafeSystem.API.Controllers
 {

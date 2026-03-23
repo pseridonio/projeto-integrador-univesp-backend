@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using CafeSystem.Application.Interfaces;
+﻿using CafeSystem.Application.Interfaces;
 using CafeSystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 

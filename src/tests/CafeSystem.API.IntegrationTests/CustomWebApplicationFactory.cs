@@ -1,12 +1,8 @@
-﻿using System;
-using CafeSystem.Infra.Persistence;
+﻿using CafeSystem.Infra.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Testcontainers.PostgreSql;
-using Xunit;
 
 namespace CafeSystem.API.IntegrationTests
 {

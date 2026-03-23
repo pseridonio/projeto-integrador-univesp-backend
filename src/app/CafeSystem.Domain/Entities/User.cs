@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace CafeSystem.Domain.Entities
+﻿namespace CafeSystem.Domain.Entities
 {
     /// <summary>
     /// Entidade de domínio que representa um usuário do sistema.

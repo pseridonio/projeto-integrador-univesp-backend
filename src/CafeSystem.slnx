@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/.config/">
+    <File Path=".dockerignore" />
+  </Folder>
   <Folder Name="/.docs/">
     <File Path="../.docs/Architecture.md" />
     <File Path="../.docs/Contributing.md" />

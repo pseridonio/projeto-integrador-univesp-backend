@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using CafeSystem.Application.DTOs;
+﻿using CafeSystem.Application.DTOs;
 using CafeSystem.Application.Handlers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

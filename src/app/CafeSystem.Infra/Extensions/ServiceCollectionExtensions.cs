@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using CafeSystem.Application.Interfaces;
+﻿using CafeSystem.Application.Interfaces;
 using CafeSystem.Infra.Persistence;
 using CafeSystem.Infra.Security;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CafeSystem.Infra.Extensions
 {
@@ -14,6 +14,7 @@ namespace CafeSystem.Infra.Extensions
             services.AddScoped<IPasswordHasher, PasswordHasherAdapter>();
             services.AddScoped<CafeSystem.Application.Interfaces.IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<CafeSystem.Application.Interfaces.IUnitOfWork, CafeSystem.Infra.Persistence.UnitOfWork>();
+            services.AddScoped<IDatabaseInitializer, DatabaseInitializer>();
             // Expose concrete implementation methods used by application (RevokeAllForUserAsync)
 
             return services;

@@ -1,14 +1,11 @@
-﻿using System;
+﻿using CafeSystem.Domain.Entities;
+using CafeSystem.Infra.Persistence;
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Threading.Tasks;
-using CafeSystem.Domain.Entities;
-using CafeSystem.Infra.Persistence;
-using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace CafeSystem.API.IntegrationTests
 {

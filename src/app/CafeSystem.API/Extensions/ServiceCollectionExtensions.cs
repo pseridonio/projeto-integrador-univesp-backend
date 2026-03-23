@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-
-namespace CafeSystem.API.Extensions
+﻿namespace CafeSystem.API.Extensions
 {
     public static class ServiceCollectionExtensions
     {
