@@ -15,12 +15,33 @@ namespace CafeSystem.API.Controllers
         private readonly RegisterHandler _registerHandler;
         private readonly UpdateUserHandler _updateUserHandler;
         private readonly DeleteUserHandler _deleteUserHandler;
+        private readonly GetUserByIdHandler _getUserByIdHandler;
 
-        public UsersController(RegisterHandler registerHandler, UpdateUserHandler updateUserHandler, DeleteUserHandler deleteUserHandler)
+        public UsersController(RegisterHandler registerHandler, UpdateUserHandler updateUserHandler, DeleteUserHandler deleteUserHandler, GetUserByIdHandler getUserByIdHandler)
         {
             _registerHandler = registerHandler;
             _updateUserHandler = updateUserHandler;
             _deleteUserHandler = deleteUserHandler;
+            _getUserByIdHandler = getUserByIdHandler;
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetUser(string id, CancellationToken cancellationToken)
+        {
+            if (!Guid.TryParse(id, out Guid userId))
+            {
+                return BadRequest(new { message = "Código informado é inválido" });
+            }
+
+            try
+            {
+                GetUserResponse response = await _getUserByIdHandler.HandleAsync(userId, cancellationToken);
+                return Ok(response);
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
+            {
+                return NotFound(new { message = "Usuário não encontrado." });
+            }
         }
 
         [HttpPost]
