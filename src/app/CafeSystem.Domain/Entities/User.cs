@@ -29,12 +29,28 @@ namespace CafeSystem.Domain.Entities
 
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+        // Logical deletion metadata
+        public DateTime? DeletedAt { get; set; }
+
+        public Guid? DeletedBy { get; set; }
+
         /// <summary>
         /// Marca o usuário como inativo (exclusão lógica).
         /// </summary>
         public void Deactivate()
         {
             IsActive = false;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Marca o usuário como excluído logicamente e salva quem realizou a exclusão.
+        /// </summary>
+        public void MarkDeleted(Guid deletedBy)
+        {
+            IsActive = false;
+            DeletedAt = DateTime.UtcNow;
+            DeletedBy = deletedBy;
             UpdatedAt = DateTime.UtcNow;
         }
     }

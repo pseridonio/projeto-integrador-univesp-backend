@@ -15,5 +15,7 @@ namespace CafeSystem.Application.Interfaces
         Task<RefreshToken?> GetByTokenAsync(string token, CancellationToken cancellationToken = default);
 
         Task RevokeAsync(RefreshToken token, CancellationToken cancellationToken = default);
+
+        Task<int> RevokeAllForUserAsync(Guid userId, CancellationToken cancellationToken = default);
     }
 }

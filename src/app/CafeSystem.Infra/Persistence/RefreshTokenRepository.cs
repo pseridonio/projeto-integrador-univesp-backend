@@ -37,5 +37,21 @@ namespace CafeSystem.Infra.Persistence
             _dbContext.Set<RefreshToken>().Update(token);
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
+
+        public async Task<int> RevokeAllForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var tokens = await _dbContext.Set<RefreshToken>().Where(t => t.UserId == userId && t.RevokedAt == null).ToListAsync(cancellationToken);
+            foreach (var t in tokens)
+            {
+                t.RevokedAt = DateTime.UtcNow;
+            }
+            if (tokens.Count > 0)
+            {
+                _dbContext.Set<RefreshToken>().UpdateRange(tokens);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            return tokens.Count;
+        }
     }
 }

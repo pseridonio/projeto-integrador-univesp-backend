@@ -14,11 +14,13 @@ namespace CafeSystem.API.Controllers
     {
         private readonly RegisterHandler _registerHandler;
         private readonly UpdateUserHandler _updateUserHandler;
+        private readonly DeleteUserHandler _deleteUserHandler;
 
-        public UsersController(RegisterHandler registerHandler, UpdateUserHandler updateUserHandler)
+        public UsersController(RegisterHandler registerHandler, UpdateUserHandler updateUserHandler, DeleteUserHandler deleteUserHandler)
         {
             _registerHandler = registerHandler;
             _updateUserHandler = updateUserHandler;
+            _deleteUserHandler = deleteUserHandler;
         }
 
         [HttpPost]
@@ -51,6 +53,33 @@ namespace CafeSystem.API.Controllers
             catch (InvalidOperationException ex)
             {
                 return NotFound(new { message = ex.Message });
+            }
+        }
+
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
+        {
+            try
+            {
+                // obtain acting user id from principal
+                string? nameId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrWhiteSpace(nameId) || !Guid.TryParse(nameId, out Guid actingUserId))
+                {
+                    return Unauthorized();
+                }
+
+                await _deleteUserHandler.HandleAsync(id, actingUserId, cancellationToken);
+
+                // If target not found, handler throws InvalidOperationException with "NOT_FOUND"
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
+            {
+                return NotFound(new { message = "Usuário não encontrado." });
             }
         }
     }

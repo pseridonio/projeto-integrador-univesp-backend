@@ -14,6 +14,8 @@ namespace CafeSystem.Application.Interfaces
 
         Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+        Task<User?> GetByIdNoTrackingAsync(Guid id, CancellationToken cancellationToken = default);
+
         Task CreateAsync(User user, CancellationToken cancellationToken = default);
 
         Task UpdateAsync(User user, CancellationToken cancellationToken = default);

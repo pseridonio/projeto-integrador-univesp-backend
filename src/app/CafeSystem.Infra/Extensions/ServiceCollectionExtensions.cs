@@ -13,6 +13,8 @@ namespace CafeSystem.Infra.Extensions
             services.AddScoped<ITokenService, JwtTokenService>();
             services.AddScoped<IPasswordHasher, PasswordHasherAdapter>();
             services.AddScoped<CafeSystem.Application.Interfaces.IRefreshTokenRepository, RefreshTokenRepository>();
+            services.AddScoped<CafeSystem.Application.Interfaces.IUnitOfWork, CafeSystem.Infra.Persistence.UnitOfWork>();
+            // Expose concrete implementation methods used by application (RevokeAllForUserAsync)
 
             return services;
         }

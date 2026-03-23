@@ -37,6 +37,13 @@ namespace CafeSystem.Infra.Persistence
             return found;
         }
 
+        // Ensure the new method declared in interface is implemented
+        public async Task<User?> GetByIdNoTrackingAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            User? found = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+            return found;
+        }
+
         public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
         {
             _dbContext.Users.Update(user);
