@@ -34,8 +34,7 @@ namespace CafeSystem.API.IntegrationTests
         [InlineData("Categoria#1")]
         public async Task Should_Return_BadRequest_When_Description_Is_Invalid(string description)
         {
-            AuthenticatedUser authenticatedUser = await CreateAndAuthenticateUserAsync();
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authenticatedUser.AccessToken);
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
 
             HttpResponseMessage response = await _client.PostAsJsonAsync("/api/categories", new { description });
 
@@ -47,8 +46,7 @@ namespace CafeSystem.API.IntegrationTests
         [Fact]
         public async Task Should_Return_Created_When_Category_Is_Valid()
         {
-            AuthenticatedUser authenticatedUser = await CreateAndAuthenticateUserAsync();
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authenticatedUser.AccessToken);
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
 
             HttpResponseMessage response = await _client.PostAsJsonAsync("/api/categories", new { description = "Bebidas" });
 
@@ -57,44 +55,7 @@ namespace CafeSystem.API.IntegrationTests
             body.GetProperty("code").GetInt32().Should().BeGreaterThan(0);
         }
 
-        private async Task<AuthenticatedUser> CreateAndAuthenticateUserAsync(DateTime? expiresAtUtc = null)
-        {
-            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
-
-            string email = $"{Guid.NewGuid()}@example.com";
-
-            object createRequest = new
-            {
-                fullName = "Integration User",
-                email,
-                password = "secret1",
-                birthDate = "1990-01-01"
-            };
-
-            HttpResponseMessage createResponse = await _client.PostAsJsonAsync("/api/users", createRequest);
-            createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-            JsonElement createBody = await ReadJsonBody(createResponse);
-            Guid userId = Guid.Parse(createBody.GetProperty("code").GetString()!);
-
-            string accessToken = Guid.NewGuid().ToString("N");
-            using IServiceScope scope = _factory.Services.CreateScope();
-            AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            RefreshToken refreshToken = new RefreshToken
-            {
-                Id = Guid.NewGuid(),
-                Token = accessToken,
-                UserId = userId,
-                ExpiresAt = expiresAtUtc ?? DateTime.UtcNow.AddHours(1)
-            };
-
-            dbContext.RefreshTokens.Add(refreshToken);
-            await dbContext.SaveChangesAsync();
-
-            return new AuthenticatedUser
-            {
-                AccessToken = accessToken
-            };
-        }
+        // Authentication helper: prefer using IntegrationTestHelpers.AuthenticateAsAdminAsync
 
         private static async Task<JsonElement> ReadJsonBody(HttpResponseMessage response)
         {
