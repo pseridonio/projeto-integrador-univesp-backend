@@ -134,7 +134,105 @@ namespace CafeSystem.API.IntegrationTests
             body.GetProperty("message").GetString().Should().Be("Data de nascimento inválida.");
         }
 
-        private async Task<AuthenticatedUser> CreateAndAuthenticateUserAsync()
+        [Fact]
+        public async Task Should_Return_Unauthorized_When_Changing_Password_Without_Token()
+        {
+            // Arrange
+            object request = new
+            {
+                password = "newSecret1"
+            };
+
+            // Act
+            HttpResponseMessage response = await _client.PutAsJsonAsync("/api/users/password", request);
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+
+        [Fact]
+        public async Task Should_Return_Unauthorized_When_Changing_Password_With_Expired_Token()
+        {
+            // Arrange
+            AuthenticatedUser authenticatedUser = await CreateAndAuthenticateUserAsync(DateTime.UtcNow.AddMinutes(-1));
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authenticatedUser.AccessToken);
+
+            object request = new
+            {
+                password = "newSecret1"
+            };
+
+            // Act
+            HttpResponseMessage response = await _client.PutAsJsonAsync("/api/users/password", request);
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task Should_Return_BadRequest_When_New_Password_Is_Blank(string password)
+        {
+            // Arrange
+            AuthenticatedUser authenticatedUser = await CreateAndAuthenticateUserAsync();
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authenticatedUser.AccessToken);
+
+            object request = new
+            {
+                password
+            };
+
+            // Act
+            HttpResponseMessage response = await _client.PutAsJsonAsync("/api/users/password", request);
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            JsonElement body = await ReadJsonBody(response);
+            body.GetProperty("message").GetString().Should().Be("O campo senha é obrigatório");
+        }
+
+        [Fact]
+        public async Task Should_Return_BadRequest_When_New_Password_Is_Too_Long()
+        {
+            // Arrange
+            AuthenticatedUser authenticatedUser = await CreateAndAuthenticateUserAsync();
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authenticatedUser.AccessToken);
+
+            object request = new
+            {
+                password = new string('a', 21)
+            };
+
+            // Act
+            HttpResponseMessage response = await _client.PutAsJsonAsync("/api/users/password", request);
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            JsonElement body = await ReadJsonBody(response);
+            body.GetProperty("message").GetString().Should().Be("Senha deve conter no máximo 20 caracteres");
+        }
+
+        [Fact]
+        public async Task Should_Return_NoContent_When_Changing_Password_With_Valid_Token_And_Valid_Password()
+        {
+            // Arrange
+            AuthenticatedUser authenticatedUser = await CreateAndAuthenticateUserAsync();
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authenticatedUser.AccessToken);
+
+            object request = new
+            {
+                password = "newSecret1"
+            };
+
+            // Act
+            HttpResponseMessage response = await _client.PutAsJsonAsync("/api/users/password", request);
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        }
+
+        private async Task<AuthenticatedUser> CreateAndAuthenticateUserAsync(DateTime? expiresAtUtc = null)
         {
             string email = $"{Guid.NewGuid()}@example.com";
             string password = "secret1";
@@ -160,7 +258,7 @@ namespace CafeSystem.API.IntegrationTests
                 Id = Guid.NewGuid(),
                 Token = accessToken,
                 UserId = userId,
-                ExpiresAt = DateTime.UtcNow.AddHours(1)
+                ExpiresAt = expiresAtUtc ?? DateTime.UtcNow.AddHours(1)
             };
 
             dbContext.RefreshTokens.Add(refreshToken);

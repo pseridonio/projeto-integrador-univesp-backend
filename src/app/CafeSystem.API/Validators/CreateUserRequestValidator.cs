@@ -1,4 +1,5 @@
 ﻿using CafeSystem.Application.DTOs;
+using CafeSystem.Application.Validation;
 using FluentValidation;
 
 namespace CafeSystem.API.Validators
