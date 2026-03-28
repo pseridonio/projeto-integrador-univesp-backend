@@ -7,7 +7,104 @@ A feature de **CRUD de usuários** é responsável pelo ciclo de vida dos usuár
 - criação de usuário;
 - consulta de usuário;
 - atualização de usuário;
+- troca de senha do usuário autenticado;
 - exclusão lógica de usuário.
+
+---
+
+## Troca de senha do usuário autenticado
+
+### Objetivo
+
+Permitir que um usuário autenticado altere somente a própria senha, desde que o token enviado na requisição seja válido.
+
+### Endpoint
+
+- **Método:** `PUT`
+- **Rota:** `/api/users/password`
+- **Segurança:** Header `Authorization: Bearer <token>` obrigatório.
+
+### Contrato de entrada
+
+Exemplo de payload:
+
+```json
+{
+  "password": "novaSenha123"
+}
+```
+
+Campos:
+
+- `password` (obrigatório)
+
+### Contrato de saída
+
+#### Sucesso
+
+- **Status:** `204 NoContent`
+
+#### Falha de autenticação
+
+- **Status:** `401 Unauthorized`
+- Ocorre quando o token não é enviado, está expirado ou é inválido.
+
+#### Falha de validação
+
+- **Status:** `400 BadRequest`
+- **Body (exemplo):**
+
+```json
+{
+  "message": "O campo senha é obrigatório"
+}
+```
+
+### Regras de negócio
+
+- somente o próprio usuário autenticado pode trocar a senha;
+- o usuário é identificado a partir do token enviado na requisição;
+- o token deve ser válido no momento da chamada;
+- a nova senha deve respeitar as mesmas regras de validação do cadastro:
+  - obrigatória;
+  - mínimo de 5 caracteres;
+  - máximo de 20 caracteres.
+
+### Fluxo principal (sucesso)
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as API (/api/users/password)
+    participant Filter as AuthorizationFilter
+    participant Handler as ChangePasswordHandler
+    participant Repo as UserRepository
+    participant Hasher as PasswordHasher (Argon2)
+    participant DB as PostgreSQL
+
+    Client->>API: PUT /api/users/password (Bearer token, password)
+    API->>Filter: Validar token
+    Filter-->>API: Token autorizado
+    API->>API: Identificar usuário autenticado
+    API->>Handler: HandleAsync(userId, request)
+    Handler->>Repo: GetByIdAsync(userId)
+    Repo->>DB: SELECT users WHERE id = userId
+    DB-->>Repo: Usuário ativo
+    Repo-->>Handler: User
+    Handler->>Hasher: Hash(password)
+    Hasher-->>Handler: hash + salt
+    Handler->>Repo: UpdateAsync(user)
+    Repo->>DB: UPDATE users
+    DB-->>Repo: OK
+    Repo-->>Handler: OK
+    Handler-->>API: Senha atualizada
+    API-->>Client: 204 NoContent
+```
+
+### Fluxos alternativos
+
+1. **Token ausente ou inválido** → o filtro retorna `401` e a requisição não alcança o controller.
+2. **Senha em branco ou muito longa** → a API retorna `400` com a mensagem de validação correspondente.
 
 ---
 

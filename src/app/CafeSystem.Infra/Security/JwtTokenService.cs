@@ -24,7 +24,7 @@ namespace CafeSystem.Infra.Security
         public string GenerateAccessToken(User user)
         {
 
-            string key = _configuration["Jwt:Key"] ?? "dev_secret_key_please_change";
+            string key = _configuration["Jwt:Key"] ?? "vH4p9Q2sL8mZ1xR7ca5454fdadD5kT3wY6bN0fU2";
             string issuer = _configuration["Jwt:Issuer"] ?? "CafeSystem";
             string audience = _configuration["Jwt:Audience"] ?? "CafeSystemAudience";
             int expiresInMinutes = GetAccessTokenExpiryMinutes();

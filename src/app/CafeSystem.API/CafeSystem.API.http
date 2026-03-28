@@ -1,11 +1,15 @@
-@CafeSystem.API_HostAddress = http://localhost:5183
-
-GET {{CafeSystem.API_HostAddress}}/todos/
-Accept: application/json
+﻿@CafeSystem.API_HostAddress = http://localhost:5183
 
 ###
 
-GET {{CafeSystem.API_HostAddress}}/todos/1
-Accept: application/json
+POST {{CafeSystem.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email":"admin@admin.com",
+  "password":"ABC123*"
+}
+
+
 
 ###

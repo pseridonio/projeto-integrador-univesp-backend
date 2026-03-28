@@ -11,6 +11,7 @@ namespace CafeSystem.Application.Extensions
             services.AddScoped<LoginHandler>();
             services.AddScoped<RefreshTokenHandler>();
             services.AddScoped<RegisterHandler>();
+            services.AddScoped<ChangePasswordHandler>();
             services.AddScoped<UpdateUserHandler>();
             services.AddScoped<DeleteUserHandler>();
             services.AddScoped<GetUserByIdHandler>();

@@ -2,6 +2,8 @@
 using CafeSystem.Application.Handlers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace CafeSystem.API.Controllers
 {
@@ -10,13 +12,15 @@ namespace CafeSystem.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly RegisterHandler _registerHandler;
+        private readonly ChangePasswordHandler _changePasswordHandler;
         private readonly UpdateUserHandler _updateUserHandler;
         private readonly DeleteUserHandler _deleteUserHandler;
         private readonly GetUserByIdHandler _getUserByIdHandler;
 
-        public UsersController(RegisterHandler registerHandler, UpdateUserHandler updateUserHandler, DeleteUserHandler deleteUserHandler, GetUserByIdHandler getUserByIdHandler)
+        public UsersController(RegisterHandler registerHandler, ChangePasswordHandler changePasswordHandler, UpdateUserHandler updateUserHandler, DeleteUserHandler deleteUserHandler, GetUserByIdHandler getUserByIdHandler)
         {
             _registerHandler = registerHandler;
+            _changePasswordHandler = changePasswordHandler;
             _updateUserHandler = updateUserHandler;
             _deleteUserHandler = deleteUserHandler;
             _getUserByIdHandler = getUserByIdHandler;
@@ -38,6 +42,29 @@ namespace CafeSystem.API.Controllers
             catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
             {
                 return NotFound(new { message = "Usuário não encontrado." });
+            }
+        }
+
+        [HttpPut("password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken cancellationToken)
+        {
+            if (!TryGetAuthenticatedUserId(out Guid userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                await _changePasswordHandler.HandleAsync(userId, request, cancellationToken);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(new { message = ex.Message });
             }
         }
 
@@ -99,6 +126,14 @@ namespace CafeSystem.API.Controllers
             {
                 return NotFound(new { message = "Usuário não encontrado." });
             }
+        }
+
+        private bool TryGetAuthenticatedUserId(out Guid userId)
+        {
+            string? userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+            return Guid.TryParse(userIdValue, out userId);
         }
     }
 }
