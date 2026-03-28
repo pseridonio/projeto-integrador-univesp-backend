@@ -60,6 +60,42 @@ namespace CafeSystem.Infra.Persistence.Migrations
                     b.ToTable("refresh_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("CafeSystem.Domain.Entities.Category", b =>
+                {
+                    b.Property<int>("Code")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Code")
+                        .HasName("pk_categories_code");
+
+                    b.ToTable("categories", (string)null);
+                });
+
             modelBuilder.Entity("CafeSystem.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")

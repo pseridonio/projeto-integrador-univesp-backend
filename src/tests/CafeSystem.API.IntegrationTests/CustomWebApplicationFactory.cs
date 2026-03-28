@@ -40,7 +40,11 @@ namespace CafeSystem.API.IntegrationTests
 
         public new async Task DisposeAsync()
         {
-            await _postgreSqlContainer.DisposeAsync();
+            if (_postgreSqlContainer != null)
+            {
+                await _postgreSqlContainer.DisposeAsync();
+            }
+
             await base.DisposeAsync();
         }
 

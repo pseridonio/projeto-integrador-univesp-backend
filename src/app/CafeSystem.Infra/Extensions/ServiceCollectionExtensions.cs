@@ -10,6 +10,7 @@ namespace CafeSystem.Infra.Extensions
         public static IServiceCollection ConfigureDI(this IServiceCollection services)
         {
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ICategoryRepository, CategoryRepository>();
             services.AddScoped<ITokenService, JwtTokenService>();
             services.AddScoped<IPasswordHasher, PasswordHasherAdapter>();
             services.AddScoped<CafeSystem.Application.Interfaces.IRefreshTokenRepository, RefreshTokenRepository>();
