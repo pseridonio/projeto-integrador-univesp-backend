@@ -1,5 +1,6 @@
 ﻿using CafeSystem.Application.DTOs;
 using CafeSystem.Application.Interfaces;
+using CafeSystem.Application.Validation;
 using CafeSystem.Domain.Entities;
 using System.Globalization;
 using System.Net.Mail;
@@ -24,7 +25,7 @@ namespace CafeSystem.Application.Handlers
         {
             ValidateFullName(request.FullName);
             ValidateEmail(request.Email);
-            ValidatePassword(request.Password);
+            PasswordValidationHelper.Validate(request.Password);
             DateOnly? birthDate = ValidateBirthDate(request.BirthDate);
 
             CafeSystem.Domain.Entities.User? exists = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
@@ -98,24 +99,6 @@ namespace CafeSystem.Application.Handlers
             catch (FormatException)
             {
                 throw new ArgumentException("Campo e-mail está em um formato inválido");
-            }
-        }
-
-        private static void ValidatePassword(string password)
-        {
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                throw new ArgumentException("O campo senha é obrigatório");
-            }
-
-            if (password.Trim().Length < 5)
-            {
-                throw new ArgumentException("Senha deve conter 5 ou mais caracteres");
-            }
-
-            if (password.Trim().Length > 20)
-            {
-                throw new ArgumentException("Senha deve conter no máximo 20 caracteres");
             }
         }
 
