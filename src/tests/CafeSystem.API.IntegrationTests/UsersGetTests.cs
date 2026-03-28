@@ -89,6 +89,8 @@ namespace CafeSystem.API.IntegrationTests
 
         private async Task<AuthenticatedUser> CreateAndAuthenticateUserAsync()
         {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
             string email = $"{Guid.NewGuid()}@example.com";
             string password = "secret1";
 

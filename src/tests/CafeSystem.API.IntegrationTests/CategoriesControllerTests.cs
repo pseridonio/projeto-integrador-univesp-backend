@@ -1,4 +1,4 @@
-using CafeSystem.Domain.Entities;
+﻿using CafeSystem.Domain.Entities;
 using CafeSystem.Infra.Persistence;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,6 +59,8 @@ namespace CafeSystem.API.IntegrationTests
 
         private async Task<AuthenticatedUser> CreateAndAuthenticateUserAsync(DateTime? expiresAtUtc = null)
         {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
             string email = $"{Guid.NewGuid()}@example.com";
 
             object createRequest = new

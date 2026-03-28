@@ -311,3 +311,42 @@ flowchart TD
     N --> O[Persiste novo token]
     O --> P[200 OK com novo token]
 ```
+
+---
+
+## Diretrizes de implementação e desenvolvimento (relevantes para Autenticação/Autorização)
+
+As seguintes especificações e boas práticas devem ser observadas ao implementar ou alterar funcionalidades relacionadas a autenticação, renovação de token e operações que exigem consistência transacional:
+
+- Convenções e estilo
+  - Seguir as convenções do repositório: identificadores em inglês, documentação XML e comentários em pt-BR com acentuação.
+  - Usar `PascalCase` para classes/métodos, `camelCase` para parâmetros e `_camelCase` para campos privados.
+
+- Arquitetura e responsabilidades
+  - Manter validações de entrada na camada API; regras de negócio na camada Application/Domain.
+  - Depender de abstrações (interfaces) via DI; não injetar implementações concretas diretamente.
+  - O fluxo de autenticação (login/refresh) deve ficar no módulo de Authorization e suas dependências em Application/Infra.
+
+- Transações e Unit of Work
+  - Para compatibilidade com providers que implementam retry strategies (ex.: Npgsql), execute blocos transacionais dentro da estratégia de execução do EF Core usando `Database.CreateExecutionStrategy()`.
+  - Expor no `IUnitOfWork` um método específico para executar ações transacionais, por exemplo `ExecuteInTransactionAsync(Func<CancellationToken, Task> action, CancellationToken)`.
+  - Limitar o uso do UnitOfWork a cenários que realmente precisam de atomicidade (neste projeto atualmente apenas a exclusão lógica de usuário + revogação de tokens).
+  - Exemplo de fluxo transacional recomendado:
+    1. `var strategy = _dbContext.Database.CreateExecutionStrategy();`
+    2. `await strategy.ExecuteAsync(async ct => { await using var tx = await _dbContext.Database.BeginTransactionAsync(ct); try { await action(ct); await _dbContext.SaveChangesAsync(ct); await tx.CommitAsync(ct); } catch { await tx.RollbackAsync(ct); throw; } });`
+
+- Entity Framework / PostgreSQL
+  - Mapear explicitamente tabelas e colunas usando snake_case (ex.: `users`, `refresh_tokens`, `created_at`).
+  - Nomear constraints de forma legível e consistente.
+
+- Testes
+  - Adicionar/atualizar testes unitários para regras novas e para garantir que `IUnitOfWork.ExecuteInTransactionAsync(...)` seja chamado quando aplicável.
+  - Mockar `IUnitOfWork.ExecuteInTransactionAsync(...)` nos testes unitários para executar a ação fornecida (ex.: `Returns<Func<CancellationToken, Task>, CancellationToken>(async (act, ct) => await act(ct))`).
+  - Manter/atualizar testes de integração que validem o comportamento end-to-end (ex.: exclusão de usuário revoga tokens) contra o ambiente de teste.
+  - Incluir testes de borda nos controladores para verificar respostas HTTP e mensagens de erro (400/401/404).
+
+- Observações operacionais
+  - Não introduzir transações em todos os handlers — privilegiar simplicidade: apenas operações multi-repositório e que demandam rollback total devem usar o `UnitOfWork`.
+  - Ao semear dados (ex.: admin), garantir que os testes de integração possam autenticar usando credenciais conhecidas (ex.: `admin@admin.com`), mas não expor credenciais em produção.
+
+Estas diretrizes se alinham ao guia de desenvolvimento do repositório e garantem implementações seguras, testáveis e compatíveis com o provider de banco adotado.
