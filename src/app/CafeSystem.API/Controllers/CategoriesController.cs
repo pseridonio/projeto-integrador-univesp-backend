@@ -69,5 +69,6 @@ namespace CafeSystem.API.Controllers
                 return NotFound(new { message = "Categoria não encontrada." });
             }
         }
+            catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
     }
 }
