@@ -11,12 +11,14 @@ namespace CafeSystem.API.Controllers
         private readonly CreateCategoryHandler _createCategoryHandler;
         private readonly GetCategoryByCodeHandler _getCategoryByCodeHandler;
         private readonly UpdateCategoryHandler _updateCategoryHandler;
+        private readonly DeleteCategoryHandler _deleteCategoryHandler;
 
-        public CategoriesController(CreateCategoryHandler createCategoryHandler, GetCategoryByCodeHandler getCategoryByCodeHandler, UpdateCategoryHandler updateCategoryHandler)
+        public CategoriesController(CreateCategoryHandler createCategoryHandler, GetCategoryByCodeHandler getCategoryByCodeHandler, UpdateCategoryHandler updateCategoryHandler, DeleteCategoryHandler deleteCategoryHandler)
         {
             _createCategoryHandler = createCategoryHandler;
             _getCategoryByCodeHandler = getCategoryByCodeHandler;
             _updateCategoryHandler = updateCategoryHandler;
+            _deleteCategoryHandler = deleteCategoryHandler;
         }
 
         [HttpPost]
@@ -69,6 +71,19 @@ namespace CafeSystem.API.Controllers
                 return NotFound(new { message = "Categoria não encontrada." });
             }
         }
+
+        [HttpDelete("{code:int}")]
+        public async Task<IActionResult> DeleteCategory(int code, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _deleteCategoryHandler.HandleAsync(code, cancellationToken);
+                return NoContent();
+            }
             catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
+            {
+                return NotFound(new { message = "Categoria não encontrada." });
+            }
+        }
     }
 }

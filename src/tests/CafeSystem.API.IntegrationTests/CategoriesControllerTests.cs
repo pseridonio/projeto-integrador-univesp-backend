@@ -1,6 +1,7 @@
 ﻿using CafeSystem.Domain.Entities;
 using CafeSystem.Infra.Persistence;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http.Headers;
@@ -196,6 +197,71 @@ namespace CafeSystem.API.IntegrationTests
             response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         }
 
+        [Fact]
+        public async Task Should_Return_Unauthorized_When_Deleting_Category_Without_Token()
+        {
+            HttpResponseMessage response = await _client.DeleteAsync("/api/categories/1");
+
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+
+        [Fact]
+        public async Task Should_Return_NotFound_When_Deleting_Category_Does_Not_Exist()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            HttpResponseMessage response = await _client.DeleteAsync($"/api/categories/{int.MaxValue}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            JsonElement body = await ReadJsonBody(response);
+            body.GetProperty("message").GetString().Should().Be("Categoria não encontrada.");
+        }
+
+        [Fact]
+        public async Task Should_Return_NoContent_When_Deleting_Already_Deleted_Category()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            int code = await CreateCategoryInDatabaseAsync(isActive: false, deletedAt: DateTime.UtcNow);
+
+            HttpResponseMessage response = await _client.DeleteAsync($"/api/categories/{code}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        }
+
+        [Fact]
+        public async Task Should_Return_NoContent_When_Deleting_Active_Category_And_Mark_It_As_Deleted()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            int code = await CreateCategoryInDatabaseAsync(isActive: true, deletedAt: null);
+
+            HttpResponseMessage response = await _client.DeleteAsync($"/api/categories/{code}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+            using IServiceScope scope = _factory.Services.CreateScope();
+            AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Category? category = await dbContext.Categories.FindAsync(code);
+
+            category.Should().NotBeNull();
+            category!.IsActive.Should().BeFalse();
+            category.DeletedAt.Should().NotBeNull();
+            category.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        }
+
+        [Fact]
+        public async Task Should_Return_NoContent_When_Deleting_Category_With_Maximum_Supported_Code()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            int code = await CreateCategoryInDatabaseAsync(isActive: true, deletedAt: null, code: int.MaxValue);
+
+            HttpResponseMessage response = await _client.DeleteAsync($"/api/categories/{code}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        }
+
         // Authentication helper: prefer using IntegrationTestHelpers.AuthenticateAsAdminAsync
 
         private static async Task<JsonElement> ReadJsonBody(HttpResponseMessage response)
@@ -205,7 +271,7 @@ namespace CafeSystem.API.IntegrationTests
             return jsonDocument.RootElement.Clone();
         }
 
-        private async Task<int> CreateCategoryInDatabaseAsync(bool isActive, DateTime? deletedAt)
+        private async Task<int> CreateCategoryInDatabaseAsync(bool isActive, DateTime? deletedAt, int? code = null)
         {
             using IServiceScope scope = _factory.Services.CreateScope();
             AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -218,6 +284,11 @@ namespace CafeSystem.API.IntegrationTests
                 IsActive = isActive,
                 DeletedAt = deletedAt
             };
+
+            if (code.HasValue)
+            {
+                category.Code = code.Value;
+            }
 
             dbContext.Categories.Add(category);
             await dbContext.SaveChangesAsync();
