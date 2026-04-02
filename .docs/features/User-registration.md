@@ -1,127 +1,73 @@
-﻿# Feature: User Registration (CRUD de Usuários)
+﻿# Requisito Funcional: Cadastro e Gestão de Usuários
 
-## Visão geral
+## 1. Objetivo
 
-A feature de **CRUD de usuários** é responsável pelo ciclo de vida dos usuários no sistema, incluindo:
+Este documento especifica os requisitos funcionais para o cadastro e gestão de usuários do sistema, contemplando:
 
-- criação de usuário;
-- consulta de usuário;
-- atualização de usuário;
-- troca de senha do usuário autenticado;
+- inclusão de novo usuário (registro);
+- consulta de usuário por identificador;
+- atualização de dados do usuário;
+- troca de senha pelo usuário autenticado;
 - exclusão lógica de usuário.
 
----
+O documento padroniza entradas, respostas HTTP, validações e regras de negócio.
 
-## Troca de senha do usuário autenticado
+## 2. Escopo
 
-### Objetivo
+O escopo inclui as operações de:
 
-Permitir que um usuário autenticado altere somente a própria senha, desde que o token enviado na requisição seja válido.
+- Registro de usuário (`POST /api/users`);
+- Troca de senha do próprio usuário autenticado (`PUT /api/users/password`);
+- Consulta de usuário por `code` (`GET /api/users/{code}`);
+- Atualização de dados do usuário (`PUT /api/users/{code}`);
+- Exclusão lógica de usuário (`DELETE /api/users/{code}`).
 
-### Endpoint
+Ficam fora do escopo:
 
-- **Método:** `PUT`
-- **Rota:** `/api/users/password`
-- **Segurança:** Header `Authorization: Bearer <token>` obrigatório.
+- controle de permissões por perfil além da necessidade de autenticação básica;
+- integração com provedores externos de identidade (SSO);
+- listagem paginada de usuários;
+- relacionamentos avançados e permissões administrativas.
 
-### Contrato de entrada
+## 3. Premissas e Restrições
 
-Exemplo de payload:
+- Todas as operações sensíveis exigem autenticação via header `Authorization: Bearer <token>` quando aplicável.
+- O identificador público do usuário será um `GUID` referenciado no campo `code`.
+- A exclusão de usuário é lógica: registros permanecem no banco com `deleted_at` preenchido.
+- Senhas são armazenadas apenas como `password_hash` e `password_salt`.
+- O algoritmo de hash utilizado é Argon2 com uso de `pepper` (segredo da aplicação).
 
-```json
-{
-  "password": "novaSenha123"
-}
-```
+## 4. Modelo de Dados
 
-Campos:
+### 4.1 Entidade de Usuário
 
-- `password` (obrigatório)
+| Campo | Tipo | Obrigatório | Descrição |
+| --- | --- | --- | --- |
+| `code` | GUID | sim | Identificador público do usuário |
+| `full_name` | texto | sim | Nome completo do usuário |
+| `email` | texto | sim | Endereço de e-mail único |
+| `birth_date` | data | não | Data de nascimento (yyyy-MM-dd) |
+| `password_hash` | texto | sim | Hash da senha (Argon2) |
+| `password_salt` | texto | sim | Salt único por usuário |
+| `is_active` | booleano | sim | Indica se o usuário está ativo |
+| `created_at` | datetime | sim | Data de criação do registro |
+| `updated_at` | datetime | sim | Data da última atualização |
+| `deleted_at` | datetime nula | não | Data de exclusão lógica, quando aplicável |
 
-### Contrato de saída
+### 4.2 Regras de integridade
 
-#### Sucesso
+- O `email` deve ser único (índice único no banco);
+- Usuários com `deleted_at != null` são considerados excluídos e não devem ser retornados em consultas operacionais.
 
-- **Status:** `204 NoContent`
+## 5. Endpoints e Contratos
 
-#### Falha de autenticação
+### 5.1 RF-01 — Criar usuário
 
-- **Status:** `401 Unauthorized`
-- Ocorre quando o token não é enviado, está expirado ou é inválido.
+- Método: `POST`
+- Rota: `/api/users`
+- Segurança: sem autenticação (registro público) — validações aplicadas.
 
-#### Falha de validação
-
-- **Status:** `400 BadRequest`
-- **Body (exemplo):**
-
-```json
-{
-  "message": "O campo senha é obrigatório"
-}
-```
-
-### Regras de negócio
-
-- somente o próprio usuário autenticado pode trocar a senha;
-- o usuário é identificado a partir do token enviado na requisição;
-- o token deve ser válido no momento da chamada;
-- a nova senha deve respeitar as mesmas regras de validação do cadastro:
-  - obrigatória;
-  - mínimo de 5 caracteres;
-  - máximo de 20 caracteres.
-
-### Fluxo principal (sucesso)
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant API as API (/api/users/password)
-    participant Filter as AuthorizationFilter
-    participant Handler as ChangePasswordHandler
-    participant Repo as UserRepository
-    participant Hasher as PasswordHasher (Argon2)
-    participant DB as PostgreSQL
-
-    Client->>API: PUT /api/users/password (Bearer token, password)
-    API->>Filter: Validar token
-    Filter-->>API: Token autorizado
-    API->>API: Identificar usuário autenticado
-    API->>Handler: HandleAsync(userId, request)
-    Handler->>Repo: GetByIdAsync(userId)
-    Repo->>DB: SELECT users WHERE id = userId
-    DB-->>Repo: Usuário ativo
-    Repo-->>Handler: User
-    Handler->>Hasher: Hash(password)
-    Hasher-->>Handler: hash + salt
-    Handler->>Repo: UpdateAsync(user)
-    Repo->>DB: UPDATE users
-    DB-->>Repo: OK
-    Repo-->>Handler: OK
-    Handler-->>API: Senha atualizada
-    API-->>Client: 204 NoContent
-```
-
-### Fluxos alternativos
-
-1. **Token ausente ou inválido** → o filtro retorna `401` e a requisição não alcança o controller.
-2. **Senha em branco ou muito longa** → a API retorna `400` com a mensagem de validação correspondente.
-
----
-
-## Inclusão de novos usuários
-
-### Objetivo
-
-Permitir o cadastro de um novo usuário a partir de dados básicos de identificação e autenticação.
-
-### Endpoint
-
-- **Método:** `POST`
-- **Rota:** `/api/users`
-
-### Contrato de entrada
-
-Exemplo de payload:
+Entrada (JSON):
 
 ```json
 {
@@ -132,197 +78,62 @@ Exemplo de payload:
 }
 ```
 
-Campos:
+Respostas:
 
-- `fullName` (obrigatório)
-- `email` (obrigatório)
-- `password` (obrigatório)
-- `birthDate` (opcional, formato `yyyy-MM-dd`)
+- Sucesso: `201 Created` + body `{ "code": "<user-id-guid>" }`;
+- Validação/Negócio: `400 Bad Request` com `{ "message": "mensagem" }`.
 
-### Contrato de saída
+Regras aplicáveis:
 
-#### Sucesso
+- Validar campos conforme seção 6;
+- Verificar duplicidade de `email` — retornar `400` com `"E-mail já cadastrado"`;
+- Gerar `password_salt`, combinar senha com `pepper` e gerar `password_hash` via Argon2;
+- Persistir entidade sem armazenar `pepper`.
 
-- **Status:** `201 Created`
-- **Body (exemplo):**
+Critérios de aceite:
+
+- Sem dados obrigatórios: `400`;
+- `email` duplicado: `400` com mensagem específica;
+- Dados válidos: `201` com `code`.
+
+### 5.2 RF-02 — Trocar senha do usuário autenticado
+
+- Método: `PUT`
+- Rota: `/api/users/password`
+- Segurança: `Authorization: Bearer <token>` obrigatório.
+
+Entrada (JSON):
 
 ```json
-{
-  "code": "<user-id-guid>"
-}
+{ "password": "novaSenha123" }
 ```
 
-#### Falha de validação/regra de negócio
+Respostas:
 
-- **Status:** `400 BadRequest`
-- **Body (exemplo):**
+- Sucesso: `204 No Content`;
+- Autenticação: `401 Unauthorized` quando token ausente, inválido ou expirado;
+- Validação: `400 Bad Request` com mensagem de validação.
 
-```json
-{
-  "message": "Campo nome é obrigatório"
-}
-```
+Regras aplicáveis:
 
----
+- Somente o usuário identificado pelo token pode alterar sua senha;
+- Validar nova senha (seção 6);
+- Gerar novo `password_salt` e `password_hash` aplicando `pepper` + Argon2;
+- Persistir alteração e atualizar `updated_at`.
 
-## Processo de cadastro
+### 5.3 RF-03 — Consultar usuário por código
 
-1. API recebe requisição de criação de usuário.
-2. API valida dados de entrada (camada de validação).
-3. Handler da aplicação executa regras de negócio.
-4. Sistema verifica se o e-mail já existe.
-5. Se e-mail não existe:
-   - gera `salt` aleatório único para o usuário;
-   - combina senha + `pepper` da aplicação;
-   - gera hash irreversível com algoritmo **Argon2**;
-   - persiste usuário com `password_hash` e `password_salt`.
-6. API retorna `201 Created` com o código do usuário.
+- Método: `GET`
+- Rota: `/api/users/{code}`
+- Segurança: `Authorization: Bearer <token>` obrigatório.
 
----
+Parâmetros:
 
-## Fluxos
+- `code` (route) — GUID do usuário.
 
-### Fluxo principal (sucesso)
+Respostas:
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant API as API (/api/users)
-    participant Handler as RegisterHandler
-    participant Hasher as PasswordHasher (Argon2)
-    participant Repo as UserRepository
-    participant DB as PostgreSQL
-
-    Client->>API: POST /api/users (fullName, birthDate, email, password)
-    API->>API: Validar payload
-    API->>Handler: HandleAsync(request)
-    Handler->>Repo: GetByEmailAsync(email)
-    Repo->>DB: SELECT por email
-    DB-->>Repo: Não encontrado
-    Repo-->>Handler: null
-    Handler->>Hasher: Hash(password)
-    Hasher-->>Handler: hash + salt
-    Handler->>Repo: CreateAsync(user)
-    Repo->>DB: INSERT users
-    DB-->>Repo: OK
-    Repo-->>Handler: OK
-    Handler-->>API: User criado
-    API-->>Client: 201 Created + { code }
-```
-
-### Fluxos alternativos (falha)
-
-1. **Dados inválidos na entrada**  
-   API retorna `400` com mensagem específica da validação.
-
-2. **E-mail já cadastrado**  
-   Handler identifica duplicidade e retorna `400` com mensagem:  
-   `"E-mail já cadastro"`.
-
-3. **Data de nascimento inválida**  
-   Quando informada e inválida/futura, retorna `400` com mensagem:  
-   `"Data de nascimento inválida"`.
-
----
-
-## Regras de negócio do cadastro
-
-### Nome (`fullName`)
-
-- Obrigatório.
-- Se nulo, vazio ou apenas espaços:  
-  `"Campo nome é obrigatório"`
-- Menos de 5 caracteres:  
-  `"Nome deve conter 5 ou mais caracteres"`
-- Mais de 250 caracteres:  
-  `"Nome deve conter no máximo 250 caracteres"`
-
-### E-mail (`email`)
-
-- Obrigatório.
-- Se nulo, vazio ou apenas espaços:  
-  `"Campo e-mail é obrigatório"`
-- Formato inválido:  
-  `"Campo e-mail está em um formato inválido"`
-- E-mail já existente na base:  
-  `"E-mail já cadastro"`
-
-### Senha (`password`)
-
-- Obrigatória.
-- Se nula, vazia ou apenas espaços:  
-  `"O campo senha é obrigatório"`
-- Menos de 5 caracteres:  
-  `"Senha deve conter 5 ou mais caracteres"`
-- Mais de 20 caracteres:  
-  `"Senha deve conter no máximo 20 caracteres"`
-
-### Data de nascimento (`birthDate`)
-
-- Campo opcional.
-- Se informada, deve ser uma data válida e menor que a data atual.
-- Em caso de valor inválido:  
-  `"Data de nascimento inválida"`
-
-Exemplos inválidos:
-
-- `2023-02-29` (ano não bissexto)
-- data futura
-- formato diferente de `yyyy-MM-dd`
-
----
-
-## Segurança de senha
-
-O cadastro de usuário deve seguir os seguintes requisitos de segurança:
-
-- uso de algoritmo **Argon2** para hash irreversível;
-- geração de `salt` aleatório por usuário (nunca fixo);
-- uso de `pepper` como secret da aplicação;
-- persistência apenas de `password_hash` e `password_salt` no banco;
-- `pepper` nunca deve ser persistido no banco.
-
----
-
-## Diagrama de fluxo (alto nível)
-
-```mermaid
-flowchart TD
-    A[Receber POST /api/users] --> B{Payload válido?}
-    B -- Não --> C[Retornar 400 com mensagem de validação]
-    B -- Sim --> D{E-mail já cadastrado?}
-    D -- Sim --> E[Retornar 400: E-mail já cadastro]
-    D -- Não --> F[Gerar salt aleatório]
-    F --> G[Gerar hash Argon2 com pepper]
-    G --> H[Persistir usuário]
-    H --> I[Retornar 201 Created + code]
-```
-
----
-
-## Consulta de usuário por código
-
-### Objetivo
-
-Disponibilizar a consulta dos dados de um usuário específico a partir do seu identificador (`code`). A operação é protegida e requer token válido.
-
-### Endpoint
-
-- **Método:** `GET`
-- **Rota:** `/api/users/{code}`
-- **Segurança:** Header `Authorization: Bearer <token>` obrigatório.
-
-### Contrato de entrada
-
-Parâmetro de rota obrigatório:
-
-```text
-code — GUID do usuário
-```
-
-### Contrato de saída
-
-#### Sucesso (`200 OK`)
+- Sucesso: `200 OK` com payload:
 
 ```json
 {
@@ -333,70 +144,207 @@ code — GUID do usuário
 }
 ```
 
-#### Erros
+- Erros:
 
-| Status | Condição | Mensagem |
-| --- | --- | --- |
-| `400 BadRequest` | `code` não é GUID | `"Código informado é inválido"` |
-| `401 Unauthorized` | token ausente ou inválido | resposta padrão `Unauthorized` |
-| `404 NotFound` | usuário inexistente ou excluído logicamente | `"Usuário não encontrado."` |
+  - `400 Bad Request` — `code` inválido (`"Código informado é inválido"`);
+  - `401 Unauthorized` — token ausente/inválido;
+  - `404 Not Found` — usuário inexistente ou excluído (`"Usuário não encontrado."`).
 
-### Fluxo principal (sucesso)
+Validações:
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant API as API (/api/users/{code})
-    participant Filter as AuthorizationFilter
-    participant Handler as GetUserByIdHandler
-    participant Repo as UserRepository
-    participant DB as PostgreSQL
+- `code` deve ser GUID válido;
+- Usuário deve estar `is_active = true` e `deleted_at = null`.
 
-    Client->>API: GET /api/users/{code} (Bearer token)
-    API->>Filter: Validar token
-    Filter-->>API: Token autorizado
-    API->>API: Validar GUID
-    API->>Handler: HandleAsync(code)
-    Handler->>Repo: GetByIdNoTrackingAsync(code)
-    Repo->>DB: SELECT users WHERE id = code
-    DB-->>Repo: Usuário ativo
-    Repo-->>Handler: User
-    Handler-->>API: DTO com dados
-    API-->>Client: 200 OK + payload
+### 5.6 RF-06 — Consultar lista de usuários
+
+- Método: `GET`
+- Rota: `/api/users`
+- Segurança: `Authorization: Bearer <token>` obrigatório.
+
+Parâmetros de query (opcionales, ambos listas):
+
+- `name` — pode ser informado múltiplas vezes (ex.: `?name=Maria&name=Jose`) ou como lista separada por vírgula (ex.: `?name=Maria,Jose`). Todos os termos informados na lista devem estar presentes no `fullName` do usuário (operador AND), em qualquer ordem.
+- `email` — pode ser informado múltiplas vezes (ex.: `?email=company&email=edu`) ou como lista separada por vírgula (ex.: `?email=company,edu`). Todos os termos informados na lista devem estar presentes no `email` do usuário (operador AND).
+
+Comportamento:
+
+- Se ambos `name` e `email` forem informados, os filtros são combinados com AND: retornar usuários cujo `fullName` contenha todos os termos de `name` e cujo `email` contenha todos os termos de `email`.
+- A busca deve ser case-insensitive e usar correspondência parcial (contains) para cada termo.
+- O filtro em `name` exige que todos os termos estejam presentes no mesmo `fullName` (ordem irrelevante).
+
+Respostas:
+
+- Sucesso: `200 OK` com array de usuários (cada item segue o contrato de RF-03; não incluir campos sensíveis como `password_hash`/`password_salt`).
+- Nenhum resultado: `404 Not Found`.
+- Autenticação: `401 Unauthorized` quando token ausente, inválido ou expirado (a validação de autenticação ocorre antes de qualquer processamento).
+
+Exemplo de chamada:
+
+`GET /api/users?name=Maria&name=Jose`
+
+Exemplo de resposta (200):
+
+```json
+[
+  {
+    "code": "<user-id-guid>",
+    "fullName": "Maria Jose Inacio",
+    "email": "maria.jose@example.com",
+    "birthDate": "1985-04-10"
+  }
+]
 ```
 
-### Fluxos alternativos
+Critérios de aceite:
 
-1. **Token ausente/inválido** → filtro retorna `401` e a requisição não alcança o controller.
-2. **`code` inválido** → controller responde `400` com mensagem específica.
-3. **Usuário inexistente ou `IsActive = false`/`DeletedAt != null`** → handler lança `NOT_FOUND` e controller transforma em `404`.
+- Sem token válido: `401`;
+- Parâmetros vazios (nenhum filtro): retornar `200` com todos os usuários ativos (comportamento permitido quando não há filtros);
+- Se não houver resultados para os filtros informados: `404`;
+- Se houver ao menos 1 usuário compatível: `200` com lista.
 
-### Regras e validações
+Observações de implementação e desempenho:
 
-- `code` deve ser um GUID válido.
-- Usuário precisa estar autenticado com token ativo.
-- Usuário retornado deve estar ativo e não excluído logicamente (`IsActive = true` e `DeletedAt = null`).
-- A resposta sempre envia `birthDate` no formato `yyyy-MM-dd` quando disponível.
+- Recomenda-se realizar a busca em lower-case e utilizar operações otimizadas (ex.: `ILIKE '%%term%%'` no PostgreSQL) e índices quando aplicável para evitar full table scans.
+- Os termos devem ser tratados como palavras (trim) e ignorar espaços em branco extras.
 
-### Diagrama de fluxo
+### 5.4 RF-04 — Atualizar usuário
 
-```mermaid
-flowchart TD
-    start([Receber GET /api/users/{code}]) --> validateToken{Token válido?}
-    validateToken -- "Não" --> unauthorized[Retornar 401 Unauthorized]
-    validateToken -- "Sim" --> validateCode{code é GUID?}
-    validateCode -- "Não" --> invalidCode[Retornar 400 Código informado é inválido]
-    validateCode -- "Sim" --> queryUser[Consultar usuário por ID]
-    queryUser --> checkStatus{Usuário existe e ativo?}
-    checkStatus -- "Não" --> notFound[Retornar 404 Usuário não encontrado]
-    checkStatus -- "Sim" --> success[Retornar 200 + dados do usuário]
-```
+- Método: `PUT`
+- Rota: `/api/users/{code}`
+- Segurança: `Authorization: Bearer <token>` obrigatório.
+
+Entrada: campos atualizáveis (`fullName`, `birthDate`).
+
+Respostas:
+
+- Sucesso: `204 No Content`;
+- `400 Bad Request` para validação;
+- `404 Not Found` quando usuário inexistente ou excluído.
+
+Regras:
+
+- Apenas o próprio usuário (identificado pelo token) ou roles administrativos (quando houver) podem atualizar;
+- Não é possível alterar `email` via este endpoint (padrão — pode ser alterado por fluxo específico com verificação);
+- Aplicar validações conforme seção 6.
+
+### 5.5 RF-05 — Excluir usuário (lógica)
+
+- Método: `DELETE`
+- Rota: `/api/users/{code}`
+- Segurança: `Authorization: Bearer <token>` obrigatório.
+
+Comportamento:
+
+- Se usuário não existir: `404 Not Found`;
+- Se usuário já excluído logicamente: `204 No Content` (idempotência);
+- Se existir e ativo: marcar `deleted_at` e retornar `204 No Content`.
+
+Regras:
+
+- Operação protegida — apenas o próprio usuário (ou administrador, futuro escopo) pode excluir;
+- Exclusão é lógica: preservar histórico.
+
+## 6. Regras de Validação
+
+### 6.1 Nome (`fullName`)
+
+- Obrigatório;
+- Nulo, vazio ou apenas espaços → `"Campo nome é obrigatório"`;
+- Menos de 5 caracteres → `"Nome deve conter 5 ou mais caracteres"`;
+- Mais de 250 caracteres → `"Nome deve conter no máximo 250 caracteres"`.
+
+### 6.2 E-mail (`email`)
+
+- Obrigatório;
+- Nulo, vazio ou apenas espaços → `"Campo e-mail é obrigatório"`;
+- Formato inválido → `"Campo e-mail está em um formato inválido"`;
+- E-mail já existente → `"E-mail já cadastrado"`.
+
+### 6.3 Senha (`password`)
+
+- Obrigatória;
+- Nulo, vazio ou apenas espaços → `"O campo senha é obrigatório"`;
+- Menos de 5 caracteres → `"Senha deve conter 5 ou mais caracteres"`;
+- Mais de 20 caracteres → `"Senha deve conter no máximo 20 caracteres"`.
+
+### 6.4 Data de nascimento (`birthDate`)
+
+- Opcional;
+- Quando informada, deve ser data válida e menor que a data atual;
+- Formato esperado: `yyyy-MM-dd`;
+- Valor inválido → `"Data de nascimento inválida"`.
+
+Exemplos inválidos: `2023-02-29`, data futura, formatos diferentes de `yyyy-MM-dd`.
+
+## 7. Segurança de Senha
+
+- Uso do algoritmo Argon2 para hashing irreversível;
+- Geração de `salt` aleatório por usuário (único e não previsível);
+- Uso de `pepper` (segredo da aplicação) combinado com a senha antes do hash;
+- Persistência somente de `password_hash` e `password_salt` no banco;
+- `pepper` não deve ser persistido no banco e deve ficar em secret store/config segura.
+
+## 8. Fluxos e Diagrama de Alto Nível
+
+Fluxo principal (criação):
+
+1. Receber `POST /api/users`;
+2. Validar payload na API;
+3. Verificar duplicidade de e-mail;
+4. Gerar `salt`, aplicar `pepper` e gerar hash (Argon2);
+5. Persistir usuário;
+6. Retornar `201 Created` com `code`.
+
+Fluxo principal (troca de senha):
+
+1. Receber `PUT /api/users/password` com token;
+2. Validar token e identificar usuário;
+3. Validar nova senha;
+4. Gerar novo `salt` e `password_hash` e persistir;
+5. Retornar `204 No Content`.
+
+## 9. Respostas HTTP Padronizadas (resumo)
+
+| Operação | Sucesso | Token inválido | Não encontrado | Validação inválida |
+| --- | --- | --- | --- | --- |
+| Criar usuário | `201 Created` | - | - | `400 Bad Request` |
+| Trocar senha | `204 No Content` | `401 Unauthorized` | - | `400 Bad Request` |
+| Consultar usuário | `200 OK` | `401 Unauthorized` | `404 Not Found` | `400 Bad Request` |
+| Atualizar usuário | `204 No Content` | `401 Unauthorized` | `404 Not Found` | `400 Bad Request` |
+| Excluir usuário | `204 No Content` | `401 Unauthorized` | `404 Not Found` | - |
+
+## 10. Cenários de Teste
+
+- Incluir sem token (quando aplicável) — `401`;
+- Incluir com campos obrigatórios ausentes — `400`;
+- Incluir com e-mail duplicado — `400`;
+- Incluir com data de nascimento inválida — `400`;
+- Trocar senha sem token — `401`;
+- Trocar senha com validações falhando — `400`;
+- Consultar usuário inexistente — `404`;
+- Excluir usuário já excluído — `204` (idempotência).
+
+## 11. Testes de Mutação (sugestões)
+
+- Remover validação do token;
+- Remover verificação de duplicidade do e-mail;
+- Alterar armazenamento da senha para texto simples;
+- Remover validação mínima de caracteres do nome.
+
+## 12. Requisitos Não Funcionais
+
+- A API deve seguir a convenção REST e usar status HTTP adequados;
+- Validações devem ocorrer na camada API; regras de negócio na Application/Domain;
+- Segredos (pepper) devem ser armazenados de forma segura (secret manager);
+- Implementações devem ser compatíveis com PostgreSQL (snake_case nas colunas);
+- Operações assíncronas devem expor `CancellationToken` em handlers.
+
+## 13. Observações de Arquitetura
+
+- Seguir o modelo de monólito modular e separação por responsabilidades;
+- Persistência e configurações específicas (EF Core mappings) devem ficar em `Infrastructure`;
+- Nomes de rotas e contratos devem estar em inglês; mensagens de validação em pt-BR.
 
 ---
 
-## Observações de arquitetura
-
-- A validação de entrada ocorre na **API**.
-- As regras de negócio do cadastro ocorrem na camada **Application/Domain**.
-- Persistência e detalhes técnicos ficam na camada **Infrastructure**.
-- O fluxo respeita o modelo de monólito modular e separação por responsabilidades do projeto.
+Este documento serve como especificação para desenvolvimento, validação e testes do fluxo de cadastro e gestão de usuários. Alterações que afetem contratos públicos ou segurança devem atualizar este artefato.

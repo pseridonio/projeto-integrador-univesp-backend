@@ -13,6 +13,8 @@ namespace CafeSystem.Application.Interfaces
 
         Task<User?> GetByIdNoTrackingAsync(Guid id, CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyList<User>> GetListAsync(IReadOnlyCollection<string> nameTerms, IReadOnlyCollection<string> emailTerms, CancellationToken cancellationToken = default);
+
         Task CreateAsync(User user, CancellationToken cancellationToken = default);
 
         Task UpdateAsync(User user, CancellationToken cancellationToken = default);
