@@ -20,6 +20,19 @@ namespace CafeSystem.Infra.Persistence
                 .FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
         }
 
+        public async Task<List<Category>> SearchByDescriptionAsync(string description, CancellationToken cancellationToken = default)
+        {
+            string[] terms = description.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            List<Category> categories = await _dbContext.Categories
+                .AsNoTracking()
+                .Where(x => x.IsActive && !x.DeletedAt.HasValue)
+                .Where(x => terms.Any(term => EF.Functions.Like(x.Description, $"%{term}%")))
+                .ToListAsync(cancellationToken);
+
+            return categories;
+        }
+
         public async Task CreateAsync(Category category, CancellationToken cancellationToken = default)
         {
             await _dbContext.Categories.AddAsync(category, cancellationToken);
@@ -33,3 +46,4 @@ namespace CafeSystem.Infra.Persistence
         }
     }
 }
+

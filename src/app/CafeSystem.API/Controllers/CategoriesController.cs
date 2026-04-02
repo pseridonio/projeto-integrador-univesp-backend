@@ -12,13 +12,15 @@ namespace CafeSystem.API.Controllers
         private readonly GetCategoryByCodeHandler _getCategoryByCodeHandler;
         private readonly UpdateCategoryHandler _updateCategoryHandler;
         private readonly DeleteCategoryHandler _deleteCategoryHandler;
+        private readonly SearchCategoriesHandler _searchCategoriesHandler;
 
-        public CategoriesController(CreateCategoryHandler createCategoryHandler, GetCategoryByCodeHandler getCategoryByCodeHandler, UpdateCategoryHandler updateCategoryHandler, DeleteCategoryHandler deleteCategoryHandler)
+        public CategoriesController(CreateCategoryHandler createCategoryHandler, GetCategoryByCodeHandler getCategoryByCodeHandler, UpdateCategoryHandler updateCategoryHandler, DeleteCategoryHandler deleteCategoryHandler, SearchCategoriesHandler searchCategoriesHandler)
         {
             _createCategoryHandler = createCategoryHandler;
             _getCategoryByCodeHandler = getCategoryByCodeHandler;
             _updateCategoryHandler = updateCategoryHandler;
             _deleteCategoryHandler = deleteCategoryHandler;
+            _searchCategoriesHandler = searchCategoriesHandler;
         }
 
         [HttpPost]
@@ -37,6 +39,20 @@ namespace CafeSystem.API.Controllers
             catch (ArgumentException ex)
             {
                 return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SearchCategories([FromQuery] SearchCategoriesRequest request, CancellationToken cancellationToken)
+        {
+            try
+            {
+                List<SearchCategoriesResponse> response = await _searchCategoriesHandler.HandleAsync(request, cancellationToken);
+                return Ok(response);
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
+            {
+                return NotFound(new { message = "Nenhuma categoria encontrada com os critérios especificados." });
             }
         }
 
@@ -87,3 +103,4 @@ namespace CafeSystem.API.Controllers
         }
     }
 }
+
