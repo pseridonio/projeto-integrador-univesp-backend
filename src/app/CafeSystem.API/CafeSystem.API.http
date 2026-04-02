@@ -1,15 +1,89 @@
 ﻿@CafeSystem.API_HostAddress = http://localhost:5183
+@CafeSystem.AccessToken = REPLACE_WITH_JWT
+@CafeSystem.RefreshToken = REPLACE_WITH_REFRESH
+@CafeSystem.UserId = 00000000-0000-0000-0000-000000000000
 
 ###
-
+# Auth - Login (public)
 POST {{CafeSystem.API_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email":"admin@admin.com",
-  "password":"ABC123*"
+  "email": "admin@admin.com",
+  "password": "ABC123*"
 }
 
+###
+# Auth - Register (public)
+POST {{CafeSystem.API_HostAddress}}/api/auth/register
+Content-Type: application/json
 
+{
+  "email": "newuser@example.com",
+  "password": "P@ssw0rd!"
+}
 
 ###
+# Auth - Refresh token (public)
+POST {{CafeSystem.API_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "token": "{{CafeSystem.AccessToken}}",
+  "refreshToken": "{{CafeSystem.RefreshToken}}"
+}
+
+###
+# Users - Create user (public)
+POST {{CafeSystem.API_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "fullName": "João Silva",
+  "email": "joao.silva@example.com",
+  "password": "ComplexP@ss1",
+  "birthDate": "1990-05-20"
+}
+
+###
+# Users - Get user by id (requires auth)
+GET {{CafeSystem.API_HostAddress}}/api/users/{{CafeSystem.UserId}}
+Authorization: Bearer {{CafeSystem.AccessToken}}
+
+###
+# Users - Change authenticated user's password (requires auth)
+PUT {{CafeSystem.API_HostAddress}}/api/users/password
+Content-Type: application/json
+Authorization: Bearer {{CafeSystem.AccessToken}}
+
+{
+  "password": "NewP@ssw0rd!"
+}
+
+###
+# Users - Update user by id (requires auth)
+PUT {{CafeSystem.API_HostAddress}}/api/users/{{CafeSystem.UserId}}
+Content-Type: application/json
+Authorization: Bearer {{CafeSystem.AccessToken}}
+
+{
+  "fullName": "João Silva Pereira",
+  "birthDate": "1990-05-20"
+}
+
+###
+# Users - Delete user by id (requires auth)
+DELETE {{CafeSystem.API_HostAddress}}/api/users/{{CafeSystem.UserId}}
+Authorization: Bearer {{CafeSystem.AccessToken}}
+
+###
+# Categories - Create category (requires auth)
+POST {{CafeSystem.API_HostAddress}}/api/categories
+Content-Type: application/json
+Authorization: Bearer {{CafeSystem.AccessToken}}
+
+{
+  "description": "Bebidas"
+}
+
+# Response

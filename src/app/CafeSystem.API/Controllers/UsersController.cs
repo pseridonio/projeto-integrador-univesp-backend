@@ -16,14 +16,33 @@ namespace CafeSystem.API.Controllers
         private readonly UpdateUserHandler _updateUserHandler;
         private readonly DeleteUserHandler _deleteUserHandler;
         private readonly GetUserByIdHandler _getUserByIdHandler;
+        private readonly GetUsersHandler _getUsersHandler;
 
-        public UsersController(RegisterHandler registerHandler, ChangePasswordHandler changePasswordHandler, UpdateUserHandler updateUserHandler, DeleteUserHandler deleteUserHandler, GetUserByIdHandler getUserByIdHandler)
+        public UsersController(RegisterHandler registerHandler, ChangePasswordHandler changePasswordHandler, UpdateUserHandler updateUserHandler, DeleteUserHandler deleteUserHandler, GetUserByIdHandler getUserByIdHandler, GetUsersHandler getUsersHandler)
         {
             _registerHandler = registerHandler;
             _changePasswordHandler = changePasswordHandler;
             _updateUserHandler = updateUserHandler;
             _deleteUserHandler = deleteUserHandler;
             _getUserByIdHandler = getUserByIdHandler;
+            _getUsersHandler = getUsersHandler;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUsers(CancellationToken cancellationToken)
+        {
+            try
+            {
+                List<string> nameTerms = ReadQueryTerms("name");
+                List<string> emailTerms = ReadQueryTerms("email");
+
+                IReadOnlyList<GetUserResponse> response = await _getUsersHandler.HandleAsync(nameTerms, emailTerms, cancellationToken);
+                return Ok(response);
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
+            {
+                return NotFound(new { message = "Usuário não encontrado." });
+            }
         }
 
         [HttpGet("{id}")]
@@ -69,7 +88,6 @@ namespace CafeSystem.API.Controllers
         }
 
         [HttpPost]
-        [AllowAnonymous]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request, CancellationToken cancellationToken)
         {
             try
@@ -134,6 +152,31 @@ namespace CafeSystem.API.Controllers
                 ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
             return Guid.TryParse(userIdValue, out userId);
+        }
+
+        private List<string> ReadQueryTerms(string key)
+        {
+            List<string> terms = new List<string>();
+            Microsoft.Extensions.Primitives.StringValues values = Request.Query[key];
+
+            foreach (string value in values)
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    continue;
+                }
+
+                string[] parts = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                foreach (string part in parts)
+                {
+                    if (!string.IsNullOrWhiteSpace(part))
+                    {
+                        terms.Add(part.Trim());
+                    }
+                }
+            }
+
+            return terms;
         }
     }
 }

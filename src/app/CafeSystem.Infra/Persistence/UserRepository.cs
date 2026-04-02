@@ -41,10 +41,42 @@ namespace CafeSystem.Infra.Persistence
             return found;
         }
 
+        public async Task<IReadOnlyList<User>> GetListAsync(IReadOnlyCollection<string> nameTerms, IReadOnlyCollection<string> emailTerms, CancellationToken cancellationToken = default)
+        {
+            IQueryable<User> query = _dbContext.Users
+                .AsNoTracking()
+                .Where(user => user.IsActive && user.DeletedAt == null);
+
+            foreach (string term in NormalizeTerms(nameTerms))
+            {
+                query = query.Where(user => user.FullName.ToLower().Contains(term));
+            }
+
+            foreach (string term in NormalizeTerms(emailTerms))
+            {
+                query = query.Where(user => user.Email.ToLower().Contains(term));
+            }
+
+            List<User> users = await query
+                .OrderBy(user => user.FullName)
+                .ThenBy(user => user.Email)
+                .ToListAsync(cancellationToken);
+
+            return users;
+        }
+
         public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
         {
             _dbContext.Users.Update(user);
             await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        private static IEnumerable<string> NormalizeTerms(IEnumerable<string> terms)
+        {
+            return terms
+                .Where(term => !string.IsNullOrWhiteSpace(term))
+                .Select(term => term.Trim().ToLowerInvariant())
+                .Distinct();
         }
     }
 }

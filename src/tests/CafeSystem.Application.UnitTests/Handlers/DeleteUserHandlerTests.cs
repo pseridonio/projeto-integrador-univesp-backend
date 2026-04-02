@@ -16,9 +16,10 @@ namespace CafeSystem.Application.UnitTests.Handlers
             Mock<IRefreshTokenRepository> tokenRepo = new Mock<IRefreshTokenRepository>();
             Mock<IUnitOfWork> uow = new Mock<IUnitOfWork>();
 
-            DeleteUserHandler handler = new DeleteUserHandler(userRepo.Object, tokenRepo.Object, uow.Object);
-
             Guid id = Guid.NewGuid();
+            userRepo.Setup(x => x.GetByIdAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(new User { Id = id, IsActive = true });
+
+            DeleteUserHandler handler = new DeleteUserHandler(userRepo.Object, tokenRepo.Object, uow.Object);
 
             // Act
             Func<Task> act = async () => await handler.HandleAsync(id, id);
@@ -83,6 +84,7 @@ namespace CafeSystem.Application.UnitTests.Handlers
             tokenRepo.Setup(x => x.RevokeAllForUserAsync(user.Id, It.IsAny<CancellationToken>())).ReturnsAsync(1);
             uow.Setup(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             uow.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            uow.Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>())).Returns<Func<CancellationToken, Task>, CancellationToken>(async (act, ct) => await act(ct));
 
             DeleteUserHandler handler = new DeleteUserHandler(userRepo.Object, tokenRepo.Object, uow.Object);
 
@@ -98,7 +100,7 @@ namespace CafeSystem.Application.UnitTests.Handlers
 
             userRepo.Verify(x => x.UpdateAsync(user, It.IsAny<CancellationToken>()), Times.Once);
             tokenRepo.Verify(x => x.RevokeAllForUserAsync(user.Id, It.IsAny<CancellationToken>()), Times.Once);
-            uow.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uow.Verify(x => x.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }

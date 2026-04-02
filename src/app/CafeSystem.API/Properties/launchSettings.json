@@ -4,7 +4,7 @@
       "commandName": "Project",
       "commandLineArgs": "--migrate",
       "launchBrowser": true,
-      "launchUrl": "todos",
+      "launchUrl": "health",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },

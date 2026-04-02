@@ -15,9 +15,27 @@ namespace CafeSystem.API.IntegrationTests
         }
 
         [Fact]
+        public async Task Should_Return_Unauthorized_When_Creating_User_Without_Token()
+        {
+            object request = new
+            {
+                fullName = "Integration User",
+                email = "integration.user@example.com",
+                password = "secret1",
+                birthDate = "1990-01-01"
+            };
+
+            HttpResponseMessage response = await _client.PostAsJsonAsync("/api/users", request);
+
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+
+        [Fact]
         public async Task Should_Create_User_When_Request_Is_Valid()
         {
             // Arrange
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
             object request = new
             {
                 fullName = "Integration User",
@@ -40,6 +58,8 @@ namespace CafeSystem.API.IntegrationTests
         public async Task Should_Return_BadRequest_When_Email_Already_Exists()
         {
             // Arrange
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
             object request = new
             {
                 fullName = "Duplicated User",
@@ -66,6 +86,8 @@ namespace CafeSystem.API.IntegrationTests
         [InlineData("Abcd", "Nome deve conter 5 ou mais caracteres")]
         public async Task Should_Return_BadRequest_When_FullName_Is_Invalid(string? fullName, string expectedMessage)
         {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
             object request = new
             {
                 fullName,
@@ -84,6 +106,8 @@ namespace CafeSystem.API.IntegrationTests
         [Fact]
         public async Task Should_Return_BadRequest_When_FullName_Has_More_Than_250_Characters()
         {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
             object request = new
             {
                 fullName = new string('a', 251),
@@ -107,6 +131,8 @@ namespace CafeSystem.API.IntegrationTests
         [InlineData("teste@", "Campo e-mail está em um formato inválido")]
         public async Task Should_Return_BadRequest_When_Email_Is_Invalid(string? email, string expectedMessage)
         {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
             object request = new
             {
                 fullName = "Integration User",
@@ -130,6 +156,8 @@ namespace CafeSystem.API.IntegrationTests
         [InlineData("123456789012345678901", "Senha deve conter no máximo 20 caracteres")]
         public async Task Should_Return_BadRequest_When_Password_Is_Invalid(string? password, string expectedMessage)
         {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
             object request = new
             {
                 fullName = "Integration User",
@@ -152,6 +180,8 @@ namespace CafeSystem.API.IntegrationTests
         [InlineData("31/01/2020")]
         public async Task Should_Return_BadRequest_When_BirthDate_Is_Invalid(string birthDate)
         {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
             object request = new
             {
                 fullName = "Integration User",

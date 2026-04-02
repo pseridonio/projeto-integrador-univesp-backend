@@ -78,8 +78,9 @@ namespace CafeSystem.API.IntegrationTests
         public async Task Delete_Existing_User_Returns_204_And_Tokens_Revoke()
         {
             // Arrange
-            AuthenticatedUser auth = await CreateAndAuthenticateUserAsync();
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
+            AuthenticatedUser actingUser = await CreateAndAuthenticateUserAsync();
+            Guid targetUserId = await CreateUserAsync();
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", actingUser.AccessToken);
 
             // create an extra refresh token for this user
             using (IServiceScope scope = _factory.Services.CreateScope())
@@ -89,7 +90,7 @@ namespace CafeSystem.API.IntegrationTests
                 {
                     Id = Guid.NewGuid(),
                     Token = Guid.NewGuid().ToString("N"),
-                    UserId = auth.UserId,
+                    UserId = targetUserId,
                     ExpiresAt = DateTime.UtcNow.AddHours(2)
                 };
                 db.RefreshTokens.Add(rt);
@@ -100,7 +101,7 @@ namespace CafeSystem.API.IntegrationTests
             HttpResponseMessage response = await _client.DeleteAsync($"/api/users/{Guid.NewGuid()}");
 
             // call delete on the created user
-            response = await _client.DeleteAsync($"/api/users/{auth.UserId}");
+            response = await _client.DeleteAsync($"/api/users/{targetUserId}");
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -108,17 +109,37 @@ namespace CafeSystem.API.IntegrationTests
             using (IServiceScope scope = _factory.Services.CreateScope())
             {
                 AppDbContext db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var tokens = await db.RefreshTokens.Where(t => t.UserId == auth.UserId).ToListAsync();
+                var tokens = await db.RefreshTokens.Where(t => t.UserId == targetUserId).ToListAsync();
                 tokens.Should().OnlyContain(t => t.RevokedAt != null);
 
-                var user = await db.Users.FindAsync(auth.UserId);
+                var user = await db.Users.FindAsync(targetUserId);
                 user.IsActive.Should().BeFalse();
                 user.DeletedAt.Should().NotBeNull();
             }
         }
 
+        private async Task<Guid> CreateUserAsync()
+        {
+            string email = $"{Guid.NewGuid()}@example.com";
+
+            object createRequest = new
+            {
+                fullName = "Integration User",
+                email,
+                password = "secret1",
+                birthDate = "1990-01-01"
+            };
+
+            HttpResponseMessage createResponse = await _client.PostAsJsonAsync("/api/users", createRequest);
+            createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+            var createBody = await createResponse.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            return Guid.Parse(createBody.GetProperty("code").GetString()!);
+        }
+
         private async Task<AuthenticatedUser> CreateAndAuthenticateUserAsync()
         {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
             string email = $"{Guid.NewGuid()}@example.com";
             string password = "secret1";
 

@@ -21,11 +21,6 @@ namespace CafeSystem.Application.Handlers
 
         public async Task HandleAsync(Guid targetUserId, Guid actingUserId, CancellationToken cancellationToken = default)
         {
-            if (targetUserId == actingUserId)
-            {
-                throw new ArgumentException("Não é possível excluir a si mesmo");
-            }
-
             User? user = await _userRepository.GetByIdAsync(targetUserId, cancellationToken);
             if (user == null)
             {
@@ -38,23 +33,20 @@ namespace CafeSystem.Application.Handlers
                 return;
             }
 
-            // Begin transaction: ensure user deletion and token revocation occur atomically
-            await _unitOfWork.BeginTransactionAsync(cancellationToken);
-            try
+            if (targetUserId == actingUserId)
+            {
+                throw new ArgumentException("Não é possível excluir a si mesmo");
+            }
+
+            // Execute deletion and token revocation inside a single transactional unit
+            await _unitOfWork.ExecuteInTransactionAsync(async ct =>
             {
                 user.MarkDeleted(actingUserId);
-                await _userRepository.UpdateAsync(user, cancellationToken);
+                await _userRepository.UpdateAsync(user, ct);
 
                 // revoke tokens
-                await _refreshTokenRepository.RevokeAllForUserAsync(user.Id, cancellationToken);
-
-                await _unitOfWork.CommitAsync(cancellationToken);
-            }
-            catch
-            {
-                await _unitOfWork.RollbackAsync(cancellationToken);
-                throw;
-            }
+                await _refreshTokenRepository.RevokeAllForUserAsync(user.Id, ct);
+            }, cancellationToken);
         }
     }
 }

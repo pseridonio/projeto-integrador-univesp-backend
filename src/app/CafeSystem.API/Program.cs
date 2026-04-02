@@ -2,6 +2,9 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http;
 // Note: DI extension methods are invoked with fully-qualified names to avoid ambiguity between layers
 
 namespace CafeSystem.API
@@ -108,6 +111,10 @@ namespace CafeSystem.API
                 });
             }
 
+            // Health checks: verifies DB connectivity
+            builder.Services.AddHealthChecks()
+                .AddCheck<DbHealthCheck>("db");
+
             Microsoft.AspNetCore.Builder.WebApplication app = builder.Build();
 
             if (app.Environment.IsDevelopment())
@@ -121,6 +128,24 @@ namespace CafeSystem.API
 
             // Map attribute routed controllers (so our filter runs)
             app.MapControllers();
+
+            // Health endpoint: returns 204 No Content when healthy, 500 when unhealthy
+            app.MapHealthChecks("/health", new HealthCheckOptions
+            {
+                ResponseWriter = async (context, report) =>
+                {
+                    context.Response.ContentType = "text/plain";
+                    context.Response.StatusCode = report.Status == HealthStatus.Healthy
+                        ? StatusCodes.Status204NoContent
+                        : StatusCodes.Status500InternalServerError;
+
+                    if (report.Status != HealthStatus.Healthy)
+                    {
+                        // minimal body on error for observability
+                        await context.Response.WriteAsync("Unhealthy");
+                    }
+                }
+            });
 
             // Apply pending EF Core migrations at startup only if requested via startup argument
             // Usage: dotnet run --project app/CafeSystem.API -- --migrate
@@ -141,6 +166,32 @@ namespace CafeSystem.API
             }
 
             await app.RunAsync();
+        }
+
+        // Simple health check implementation that attempts to connect to the EF Core DbContext
+        private class DbHealthCheck : IHealthCheck
+        {
+            private readonly IServiceScopeFactory _scopeFactory;
+
+            public DbHealthCheck(IServiceScopeFactory scopeFactory)
+            {
+                _scopeFactory = scopeFactory;
+            }
+
+            public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+            {
+                try
+                {
+                    using IServiceScope scope = _scopeFactory.CreateScope();
+                    CafeSystem.Infra.Persistence.AppDbContext db = scope.ServiceProvider.GetRequiredService<CafeSystem.Infra.Persistence.AppDbContext>();
+                    bool canConnect = await db.Database.CanConnectAsync(cancellationToken);
+                    return canConnect ? HealthCheckResult.Healthy() : HealthCheckResult.Unhealthy("Cannot connect to database");
+                }
+                catch (Exception ex)
+                {
+                    return HealthCheckResult.Unhealthy(ex.Message);
+                }
+            }
         }
     }
 }

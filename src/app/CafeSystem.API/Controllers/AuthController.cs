@@ -36,7 +36,6 @@ namespace CafeSystem.API.Controllers
         }
 
         [HttpPost("refresh")]
-        [AllowAnonymous]
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
         {
             RefreshTokenResponse? result = await _refreshTokenHandler.HandleAsync(request);
@@ -44,23 +43,6 @@ namespace CafeSystem.API.Controllers
                 return Unauthorized(new { message = "E-mail ou senha inválidos" });
 
             return Ok(result);
-        }
-
-        [HttpPost("register")]
-        [AllowAnonymous]
-        public async Task<IActionResult> Register([FromBody] LoginRequest request)
-        {
-            // Reusing LoginRequest for simplicity: email + password. full name will be email local-part
-            string fullName = request.Email.Split('@')[0];
-            try
-            {
-                CafeSystem.Domain.Entities.User user = await _registerHandler.HandleAsync(request.Email, request.Password, fullName);
-                return CreatedAtAction(nameof(Register), new { id = user.Id }, new { user.Id, user.Email, user.FullName });
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
         }
     }
 }

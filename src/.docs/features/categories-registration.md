@@ -1,4 +1,4 @@
-# Requisito Funcional: Cadastro de Categorias de Produtos
+﻿# Requisito Funcional: Cadastro de Categorias de Produtos
 
 ## 1. Objetivo
 

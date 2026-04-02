@@ -15,6 +15,12 @@ namespace CafeSystem.Application.Extensions
             services.AddScoped<UpdateUserHandler>();
             services.AddScoped<DeleteUserHandler>();
             services.AddScoped<GetUserByIdHandler>();
+            services.AddScoped<GetUsersHandler>();
+            services.AddScoped<CreateCategoryHandler>();
+            services.AddScoped<GetCategoryByCodeHandler>();
+            services.AddScoped<UpdateCategoryHandler>();
+            services.AddScoped<DeleteCategoryHandler>();
+            services.AddScoped<SearchCategoriesHandler>();
 
             // Repositories from infra are registered in infra layer; keep application only aware of handlers
 
