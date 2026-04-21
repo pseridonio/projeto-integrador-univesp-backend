@@ -44,6 +44,19 @@ namespace CafeSystem.Infra.Persistence
             _dbContext.Categories.Update(category);
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
+
+        public async Task<int> CountActiveByCodesAsync(IReadOnlyCollection<int> codes, CancellationToken cancellationToken = default)
+        {
+            if (codes.Count == 0)
+            {
+                return 0;
+            }
+
+            return await _dbContext.Categories
+                .AsNoTracking()
+                .Where(x => x.IsActive && !x.DeletedAt.HasValue)
+                .CountAsync(x => codes.Contains(x.Code), cancellationToken);
+        }
     }
 }
 

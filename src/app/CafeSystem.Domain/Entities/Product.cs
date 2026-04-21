@@ -1,19 +1,20 @@
 ﻿namespace CafeSystem.Domain.Entities
 {
-    /// <summary>
-    /// Entidade que representa uma categoria de produto.
-    /// </summary>
-    public class Category
+    public class Product
     {
-        public int Code { get; set; }
+        public int Id { get; set; }
+
+        public string Barcode { get; set; } = string.Empty;
 
         public string Description { get; set; } = string.Empty;
+
+        public decimal UnitPrice { get; set; }
+
+        public bool IsDeleted { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-        public bool IsActive { get; set; } = true;
 
         public DateTime? DeletedAt { get; set; }
 

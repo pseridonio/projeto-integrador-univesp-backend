@@ -11,6 +11,7 @@ namespace CafeSystem.Infra.Extensions
         {
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ICategoryRepository, CategoryRepository>();
+            services.AddScoped<IProductRepository, ProductRepository>();
             services.AddScoped<ITokenService, JwtTokenService>();
             services.AddScoped<IPasswordHasher, PasswordHasherAdapter>();
             services.AddScoped<CafeSystem.Application.Interfaces.IRefreshTokenRepository, RefreshTokenRepository>();

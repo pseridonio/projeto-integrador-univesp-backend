@@ -12,6 +12,7 @@
   <Folder Name="/.docs/features/">
     <File Path="../.docs/features/Authorization.md" />
     <File Path="../.docs/features/User-registration.md" />
+    <File Path=".docs/features/cadastro-produtos.md" />
     <File Path=".docs/features/categories-registration.md" />
   </Folder>
   <Folder Name="/app/">

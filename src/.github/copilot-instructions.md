@@ -11,6 +11,7 @@
 - Rotas de API e especificações OpenAPI devem estar em inglês e seguir OpenAPI 3.0.
 - Adicionar testes unitários para novas regras de negócio e handlers, seguindo o padrão Arrange/Act/Assert e nomenclatura Should_<ExpectedBehavior>_When_<Condition>.
 - Evitar duplicação entre validadores e centralizar regras compartilhadas (ex.: validação de data de nascimento) em helper/base class reutilizável.
+- Ao especificar funcionalidades em documentos .md, usar padrão por requisito funcional com seções: API (método/rota), Segurança, Entrada, Saídas, Regras de negócio aplicáveis, Critérios de aceite em checklist, Cenários de testes e Fluxo com diagramas Mermaid (flowchart e sequence).
 
 Programando em C#
 ------------------

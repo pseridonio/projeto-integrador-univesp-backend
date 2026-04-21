@@ -11,5 +11,7 @@ namespace CafeSystem.Application.Interfaces
         Task CreateAsync(Category category, CancellationToken cancellationToken = default);
 
         Task UpdateAsync(Category category, CancellationToken cancellationToken = default);
+
+        Task<int> CountActiveByCodesAsync(IReadOnlyCollection<int> codes, CancellationToken cancellationToken = default);
     }
 }
