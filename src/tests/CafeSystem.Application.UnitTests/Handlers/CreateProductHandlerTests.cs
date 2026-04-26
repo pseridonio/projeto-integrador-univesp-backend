@@ -61,7 +61,7 @@ namespace CafeSystem.Application.UnitTests.Handlers
 
             Func<Task> act = async () => await handler.HandleAsync(request);
 
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Código de barras já utilizado");
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Código de barras já utilizado.");
         }
 
         [Fact]

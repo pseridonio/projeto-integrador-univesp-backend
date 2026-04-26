@@ -68,7 +68,7 @@ namespace CafeSystem.API.IntegrationTests
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             JsonElement body = await IntegrationTestHelpers.ReadJsonBodyAsync(response);
-            body.GetProperty("message").GetString().Should().Be("Código de barras já utilizado");
+            body.GetProperty("message").GetString().Should().Be("Código de barras já utilizado.");
         }
 
         [Fact]
@@ -121,6 +121,123 @@ namespace CafeSystem.API.IntegrationTests
             product.ProductCategories.Should().HaveCount(2);
         }
 
+        [Fact]
+        public async Task Should_Return_Unauthorized_When_Updating_Product_Without_Token()
+        {
+            HttpResponseMessage response = await _client.PutAsJsonAsync("/api/products/1", new
+            {
+                barcode = "7891234567000",
+                description = "Produto Atualizado",
+                unitPrice = 9.99m
+            });
+
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+
+        [Fact]
+        public async Task Should_Return_NotFound_When_Updating_Product_That_Does_Not_Exist()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            HttpResponseMessage response = await _client.PutAsJsonAsync("/api/products/999999", new
+            {
+                barcode = "7891234567000",
+                description = "Produto Atualizado",
+                unitPrice = 9.99m
+            });
+
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
+
+        [Fact]
+        public async Task Should_Return_NotFound_When_Updating_Deleted_Product()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            int productId = await CreateDeletedProductInDatabaseAsync("7891234500000");
+
+            HttpResponseMessage response = await _client.PutAsJsonAsync($"/api/products/{productId}", new
+            {
+                barcode = "7891234567000",
+                description = "Produto Atualizado",
+                unitPrice = 9.99m
+            });
+
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
+
+        [Fact]
+        public async Task Should_Return_BadRequest_When_Updating_Product_With_Duplicated_Barcode()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            int sourceProductId = await CreateProductInDatabaseAsync("7891234511111");
+            await CreateProductInDatabaseAsync("7891234522222");
+
+            HttpResponseMessage response = await _client.PutAsJsonAsync($"/api/products/{sourceProductId}", new
+            {
+                barcode = "7891234522222",
+                description = "Produto Atualizado",
+                unitPrice = 10.99m
+            });
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            JsonElement body = await IntegrationTestHelpers.ReadJsonBodyAsync(response);
+            body.GetProperty("message").GetString().Should().Be("Código de barras já utilizado.");
+        }
+
+        [Fact]
+        public async Task Should_Return_NoContent_When_Updating_Product_Keeping_Same_Barcode()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            int productId = await CreateProductInDatabaseAsync("7891234533333");
+
+            HttpResponseMessage response = await _client.PutAsJsonAsync($"/api/products/{productId}", new
+            {
+                barcode = "7891234533333",
+                description = "Produto Atualizado",
+                unitPrice = 18.50m
+            });
+
+            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+            using IServiceScope scope = _factory.Services.CreateScope();
+            AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Product? product = await dbContext.Products.FirstOrDefaultAsync(x => x.Id == productId);
+
+            product.Should().NotBeNull();
+            product!.Barcode.Should().Be("7891234533333");
+            product.Description.Should().Be("Produto Atualizado");
+            product.UnitPrice.Should().Be(18.50m);
+        }
+
+        [Fact]
+        public async Task Should_Return_NoContent_When_Updating_Product_Changing_Barcode()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            int productId = await CreateProductInDatabaseAsync("7891234544444");
+
+            HttpResponseMessage response = await _client.PutAsJsonAsync($"/api/products/{productId}", new
+            {
+                barcode = "7891234555555",
+                description = "Produto Alterado",
+                unitPrice = 21.00m
+            });
+
+            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+            using IServiceScope scope = _factory.Services.CreateScope();
+            AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Product? product = await dbContext.Products.FirstOrDefaultAsync(x => x.Id == productId);
+
+            product.Should().NotBeNull();
+            product!.Barcode.Should().Be("7891234555555");
+            product.Description.Should().Be("Produto Alterado");
+            product.UnitPrice.Should().Be(21.00m);
+        }
+
         private async Task<int> CreateCategoryInDatabaseAsync(string description = "Bebidas")
         {
             using IServiceScope scope = _factory.Services.CreateScope();
@@ -141,7 +258,7 @@ namespace CafeSystem.API.IntegrationTests
             return category.Code;
         }
 
-        private async Task CreateProductInDatabaseAsync(string barcode)
+        private async Task<int> CreateProductInDatabaseAsync(string barcode)
         {
             using IServiceScope scope = _factory.Services.CreateScope();
             AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -158,6 +275,30 @@ namespace CafeSystem.API.IntegrationTests
 
             dbContext.Products.Add(product);
             await dbContext.SaveChangesAsync();
+
+            return product.Id;
+        }
+
+        private async Task<int> CreateDeletedProductInDatabaseAsync(string barcode)
+        {
+            using IServiceScope scope = _factory.Services.CreateScope();
+            AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            Product product = new Product
+            {
+                Barcode = barcode,
+                Description = "Produto Excluído",
+                UnitPrice = 5.50m,
+                IsDeleted = true,
+                DeletedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            dbContext.Products.Add(product);
+            await dbContext.SaveChangesAsync();
+
+            return product.Id;
         }
     }
 }

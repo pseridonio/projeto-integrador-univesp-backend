@@ -9,10 +9,12 @@ namespace CafeSystem.API.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly CreateProductHandler _createProductHandler;
+        private readonly UpdateProductHandler _updateProductHandler;
 
-        public ProductsController(CreateProductHandler createProductHandler)
+        public ProductsController(CreateProductHandler createProductHandler, UpdateProductHandler updateProductHandler)
         {
             _createProductHandler = createProductHandler;
+            _updateProductHandler = updateProductHandler;
         }
 
         [HttpPost]
@@ -32,6 +34,24 @@ namespace CafeSystem.API.Controllers
             catch (ArgumentException ex)
             {
                 return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductRequest request, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _updateProductHandler.HandleAsync(id, request, cancellationToken);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
+            {
+                return NotFound();
             }
         }
     }

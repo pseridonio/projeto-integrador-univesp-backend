@@ -20,7 +20,7 @@ namespace CafeSystem.Application.Handlers
             bool barcodeInUse = await _productRepository.ExistsActiveByBarcodeAsync(request.Barcode, cancellationToken);
             if (barcodeInUse)
             {
-                throw new ArgumentException("Código de barras já utilizado");
+                throw new ArgumentException("Código de barras já utilizado.");
             }
 
             IReadOnlyCollection<int> distinctCategoryCodes = request.Categories.Distinct().ToList();

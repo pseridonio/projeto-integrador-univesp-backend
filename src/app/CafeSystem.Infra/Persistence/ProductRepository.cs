@@ -20,9 +20,31 @@ namespace CafeSystem.Infra.Persistence
                 .AnyAsync(x => !x.IsDeleted && x.Barcode == barcode, cancellationToken);
         }
 
+        public async Task<bool> ExistsActiveByBarcodeExceptIdAsync(string barcode, int productId, CancellationToken cancellationToken = default)
+        {
+            return await _dbContext.Products
+                .AsNoTracking()
+                .AnyAsync(x => !x.IsDeleted && x.Barcode == barcode && x.Id != productId, cancellationToken);
+        }
+
+        public async Task<Product?> GetActiveByIdNoTrackingAsync(int id, CancellationToken cancellationToken = default)
+        {
+            Product? product = await _dbContext.Products
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
+
+            return product;
+        }
+
         public async Task CreateAsync(Product product, CancellationToken cancellationToken = default)
         {
             await _dbContext.Products.AddAsync(product, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
+        {
+            _dbContext.Products.Update(product);
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
     }
