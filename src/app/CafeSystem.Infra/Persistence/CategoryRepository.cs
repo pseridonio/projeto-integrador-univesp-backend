@@ -1,5 +1,7 @@
 ﻿using CafeSystem.Application.Interfaces;
 using CafeSystem.Domain.Entities;
+using System.Linq.Expressions;
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 
 namespace CafeSystem.Infra.Persistence
@@ -22,15 +24,40 @@ namespace CafeSystem.Infra.Persistence
 
         public async Task<List<Category>> SearchByDescriptionAsync(string description, CancellationToken cancellationToken = default)
         {
-            string[] terms = description.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] terms = description.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            List<Category> categories = await _dbContext.Categories
+            IQueryable<Category> query = _dbContext.Categories
                 .AsNoTracking()
-                .Where(x => x.IsActive && !x.DeletedAt.HasValue)
-                .Where(x => terms.Any(term => EF.Functions.Like(x.Description, $"%{term}%")))
-                .ToListAsync(cancellationToken);
+                .Where(x => x.IsActive && !x.DeletedAt.HasValue);
 
-            return categories;
+            if (terms.Length == 0)
+            {
+                return new List<Category>();
+            }
+
+            ParameterExpression parameter = Expression.Parameter(typeof(Category), "x");
+            Expression? predicateBody = null;
+            MethodInfo likeMethod = typeof(DbFunctionsExtensions).GetMethod(
+                nameof(DbFunctionsExtensions.Like),
+                new[] { typeof(DbFunctions), typeof(string), typeof(string) })!;
+
+            foreach (string term in terms)
+            {
+                string searchTerm = term;
+                Expression likeExpression = Expression.Call(
+                    likeMethod,
+                    Expression.Constant(EF.Functions),
+                    Expression.Property(parameter, nameof(Category.Description)),
+                    Expression.Constant("%" + searchTerm + "%"));
+
+                predicateBody = predicateBody is null
+                    ? likeExpression
+                    : Expression.OrElse(predicateBody, likeExpression);
+            }
+
+            Expression<Func<Category, bool>> predicate = Expression.Lambda<Func<Category, bool>>(predicateBody!, parameter);
+
+            return await query.Where(predicate).ToListAsync(cancellationToken);
         }
 
         public async Task CreateAsync(Category category, CancellationToken cancellationToken = default)

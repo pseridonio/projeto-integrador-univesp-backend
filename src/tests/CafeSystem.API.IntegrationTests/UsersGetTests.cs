@@ -9,15 +9,11 @@ using System.Text.Json;
 
 namespace CafeSystem.API.IntegrationTests
 {
-    public class UsersGetTests : IClassFixture<CustomWebApplicationFactory>
+    public class UsersGetTests : IntegrationTestBase, IClassFixture<CustomWebApplicationFactory>
     {
-        private readonly CustomWebApplicationFactory _factory;
-        private readonly HttpClient _client;
-
         public UsersGetTests(CustomWebApplicationFactory factory)
+            : base(factory)
         {
-            _factory = factory;
-            _client = factory.CreateClient();
         }
 
         [Fact]

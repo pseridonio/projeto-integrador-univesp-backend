@@ -9,15 +9,11 @@ using System.Net.Http.Json;
 
 namespace CafeSystem.API.IntegrationTests
 {
-    public class UsersDeleteTests : IClassFixture<CustomWebApplicationFactory>
+    public class UsersDeleteTests : IntegrationTestBase, IClassFixture<CustomWebApplicationFactory>
     {
-        private readonly CustomWebApplicationFactory _factory;
-        private readonly HttpClient _client;
-
         public UsersDeleteTests(CustomWebApplicationFactory factory)
+            : base(factory)
         {
-            _factory = factory;
-            _client = factory.CreateClient();
         }
 
         [Fact]

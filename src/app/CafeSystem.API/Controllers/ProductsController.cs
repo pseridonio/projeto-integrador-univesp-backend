@@ -10,11 +10,13 @@ namespace CafeSystem.API.Controllers
     {
         private readonly CreateProductHandler _createProductHandler;
         private readonly UpdateProductHandler _updateProductHandler;
+        private readonly DeleteProductHandler _deleteProductHandler;
 
-        public ProductsController(CreateProductHandler createProductHandler, UpdateProductHandler updateProductHandler)
+        public ProductsController(CreateProductHandler createProductHandler, UpdateProductHandler updateProductHandler, DeleteProductHandler deleteProductHandler)
         {
             _createProductHandler = createProductHandler;
             _updateProductHandler = updateProductHandler;
+            _deleteProductHandler = deleteProductHandler;
         }
 
         [HttpPost]
@@ -52,6 +54,20 @@ namespace CafeSystem.API.Controllers
             catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
             {
                 return NotFound();
+            }
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> DeleteProduct(int id, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _deleteProductHandler.HandleAsync(id, cancellationToken);
+                return NoContent();
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
+            {
+                return NotFound(new { message = "Produto não encontrado." });
             }
         }
     }

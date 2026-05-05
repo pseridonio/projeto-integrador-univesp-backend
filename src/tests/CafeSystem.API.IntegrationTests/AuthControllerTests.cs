@@ -5,13 +5,11 @@ using System.Text.Json;
 
 namespace CafeSystem.API.IntegrationTests
 {
-    public class AuthControllerTests : IClassFixture<CustomWebApplicationFactory>
+    public class AuthControllerTests : IntegrationTestBase, IClassFixture<CustomWebApplicationFactory>
     {
-        private readonly System.Net.Http.HttpClient _client;
-
         public AuthControllerTests(CustomWebApplicationFactory factory)
+            : base(factory)
         {
-            _client = factory.CreateClient();
         }
 
         [Fact]

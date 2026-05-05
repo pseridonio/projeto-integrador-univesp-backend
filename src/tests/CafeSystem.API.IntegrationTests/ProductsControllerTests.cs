@@ -9,15 +9,11 @@ using System.Text.Json;
 
 namespace CafeSystem.API.IntegrationTests
 {
-    public class ProductsControllerTests : IClassFixture<CustomWebApplicationFactory>
+    public class ProductsControllerTests : IntegrationTestBase, IClassFixture<CustomWebApplicationFactory>
     {
-        private readonly CustomWebApplicationFactory _factory;
-        private readonly HttpClient _client;
-
         public ProductsControllerTests(CustomWebApplicationFactory factory)
+            : base(factory)
         {
-            _factory = factory;
-            _client = factory.CreateClient();
         }
 
         [Fact]
@@ -236,6 +232,48 @@ namespace CafeSystem.API.IntegrationTests
             product!.Barcode.Should().Be("7891234555555");
             product.Description.Should().Be("Produto Alterado");
             product.UnitPrice.Should().Be(21.00m);
+        }
+
+        [Fact]
+        public async Task Should_Return_Unauthorized_When_Deleting_Product_Without_Token()
+        {
+            HttpResponseMessage response = await _client.DeleteAsync("/api/products/1");
+
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+
+        [Fact]
+        public async Task Should_Return_NotFound_When_Deleting_Product_That_Does_Not_Exist()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            HttpResponseMessage response = await _client.DeleteAsync($"/api/products/{int.MaxValue}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            JsonElement body = await IntegrationTestHelpers.ReadJsonBodyAsync(response);
+            body.GetProperty("message").GetString().Should().Be("Produto não encontrado.");
+        }
+
+        [Fact]
+        public async Task Should_Return_NoContent_When_Deleting_Active_Product_And_Clear_Barcode()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            int productId = await CreateProductInDatabaseAsync("7891234567777");
+
+            HttpResponseMessage response = await _client.DeleteAsync($"/api/products/{productId}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+            using IServiceScope scope = _factory.Services.CreateScope();
+            AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Product? product = await dbContext.Products.FirstOrDefaultAsync(x => x.Id == productId);
+
+            product.Should().NotBeNull();
+            product!.IsDeleted.Should().BeTrue();
+            product.Barcode.Should().BeEmpty();
+            product.DeletedAt.Should().NotBeNull();
+            product.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
         }
 
         private async Task<int> CreateCategoryInDatabaseAsync(string description = "Bebidas")
