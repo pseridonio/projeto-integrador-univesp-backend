@@ -22,6 +22,13 @@ namespace CafeSystem.Infra.Persistence
                 .FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
         }
 
+        public async Task<bool> ExistsActiveByCodeAsync(int code, CancellationToken cancellationToken = default)
+        {
+            return await _dbContext.Categories
+                .AsNoTracking()
+                .AnyAsync(x => x.Code == code && x.IsActive && !x.DeletedAt.HasValue, cancellationToken);
+        }
+
         public async Task<List<Category>> SearchByDescriptionAsync(string description, CancellationToken cancellationToken = default)
         {
             string[] terms = description.Split(' ', StringSplitOptions.RemoveEmptyEntries);

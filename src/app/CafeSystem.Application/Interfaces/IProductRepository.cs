@@ -8,10 +8,16 @@ namespace CafeSystem.Application.Interfaces
 
         Task<bool> ExistsActiveByBarcodeExceptIdAsync(string barcode, int productId, CancellationToken cancellationToken = default);
 
+        Task<bool> ExistsActiveByIdAsync(int id, CancellationToken cancellationToken = default);
+
+        Task<bool> ExistsCategoryAssociationAsync(int productId, int categoryCode, CancellationToken cancellationToken = default);
+
         Task<Product?> GetActiveByIdNoTrackingAsync(int id, CancellationToken cancellationToken = default);
 
         Task CreateAsync(Product product, CancellationToken cancellationToken = default);
 
         Task UpdateAsync(Product product, CancellationToken cancellationToken = default);
+
+        Task AddCategoryAsync(ProductCategory productCategory, CancellationToken cancellationToken = default);
     }
 }

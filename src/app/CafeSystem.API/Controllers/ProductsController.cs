@@ -11,12 +11,14 @@ namespace CafeSystem.API.Controllers
         private readonly CreateProductHandler _createProductHandler;
         private readonly UpdateProductHandler _updateProductHandler;
         private readonly DeleteProductHandler _deleteProductHandler;
+        private readonly AddCategoryToProductHandler _addCategoryToProductHandler;
 
-        public ProductsController(CreateProductHandler createProductHandler, UpdateProductHandler updateProductHandler, DeleteProductHandler deleteProductHandler)
+        public ProductsController(CreateProductHandler createProductHandler, UpdateProductHandler updateProductHandler, DeleteProductHandler deleteProductHandler, AddCategoryToProductHandler addCategoryToProductHandler)
         {
             _createProductHandler = createProductHandler;
             _updateProductHandler = updateProductHandler;
             _deleteProductHandler = deleteProductHandler;
+            _addCategoryToProductHandler = addCategoryToProductHandler;
         }
 
         [HttpPost]
@@ -64,6 +66,29 @@ namespace CafeSystem.API.Controllers
             {
                 await _deleteProductHandler.HandleAsync(id, cancellationToken);
                 return NoContent();
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
+            {
+                return NotFound(new { message = "Produto não encontrado." });
+            }
+        }
+
+        [HttpPost("{productId:int}/categories/{categoryId:int}")]
+        public async Task<IActionResult> AddCategoryToProduct(int productId, int categoryId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                bool created = await _addCategoryToProductHandler.HandleAsync(productId, categoryId, cancellationToken);
+                if (!created)
+                {
+                    return NoContent();
+                }
+
+                return Created($"/api/products/{productId}/categories/{categoryId}", new { productId, categoryId });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
             catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
             {
