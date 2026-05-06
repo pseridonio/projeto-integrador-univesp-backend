@@ -12,13 +12,15 @@ namespace CafeSystem.API.Controllers
         private readonly UpdateProductHandler _updateProductHandler;
         private readonly DeleteProductHandler _deleteProductHandler;
         private readonly AddCategoryToProductHandler _addCategoryToProductHandler;
+        private readonly RemoveCategoryFromProductHandler _removeCategoryFromProductHandler;
 
-        public ProductsController(CreateProductHandler createProductHandler, UpdateProductHandler updateProductHandler, DeleteProductHandler deleteProductHandler, AddCategoryToProductHandler addCategoryToProductHandler)
+        public ProductsController(CreateProductHandler createProductHandler, UpdateProductHandler updateProductHandler, DeleteProductHandler deleteProductHandler, AddCategoryToProductHandler addCategoryToProductHandler, RemoveCategoryFromProductHandler removeCategoryFromProductHandler)
         {
             _createProductHandler = createProductHandler;
             _updateProductHandler = updateProductHandler;
             _deleteProductHandler = deleteProductHandler;
             _addCategoryToProductHandler = addCategoryToProductHandler;
+            _removeCategoryFromProductHandler = removeCategoryFromProductHandler;
         }
 
         [HttpPost]
@@ -85,6 +87,24 @@ namespace CafeSystem.API.Controllers
                 }
 
                 return Created($"/api/products/{productId}/categories/{categoryId}", new { productId, categoryId });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
+            {
+                return NotFound(new { message = "Produto não encontrado." });
+            }
+        }
+
+        [HttpDelete("{productId:int}/categories/{categoryId:int}")]
+        public async Task<IActionResult> RemoveCategoryFromProduct(int productId, int categoryId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _removeCategoryFromProductHandler.HandleAsync(productId, categoryId, cancellationToken);
+                return NoContent();
             }
             catch (ArgumentException ex)
             {

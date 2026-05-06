@@ -12,6 +12,8 @@ namespace CafeSystem.Application.Interfaces
 
         Task<bool> ExistsCategoryAssociationAsync(int productId, int categoryCode, CancellationToken cancellationToken = default);
 
+        Task<int> CountCategoryAssociationsAsync(int productId, CancellationToken cancellationToken = default);
+
         Task<Product?> GetActiveByIdNoTrackingAsync(int id, CancellationToken cancellationToken = default);
 
         Task CreateAsync(Product product, CancellationToken cancellationToken = default);
@@ -19,5 +21,7 @@ namespace CafeSystem.Application.Interfaces
         Task UpdateAsync(Product product, CancellationToken cancellationToken = default);
 
         Task AddCategoryAsync(ProductCategory productCategory, CancellationToken cancellationToken = default);
+
+        Task RemoveCategoryAsync(ProductCategory productCategory, CancellationToken cancellationToken = default);
     }
 }

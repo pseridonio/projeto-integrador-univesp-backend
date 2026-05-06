@@ -354,6 +354,104 @@ namespace CafeSystem.API.IntegrationTests
             response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         }
 
+        [Fact]
+        public async Task Should_Return_Unauthorized_When_Removing_Category_From_Product_Without_Token()
+        {
+            HttpResponseMessage response = await _client.DeleteAsync("/api/products/1/categories/1");
+
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+
+        [Fact]
+        public async Task Should_Return_NotFound_When_Removing_Category_From_Deleted_Product()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            int productId = await CreateDeletedProductInDatabaseAsync("7891234633333");
+            int categoryCode = await CreateCategoryInDatabaseAsync("Bebidas");
+
+            using IServiceScope scope = _factory.Services.CreateScope();
+            AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            dbContext.ProductCategories.Add(new ProductCategory
+            {
+                ProductId = productId,
+                CategoryCode = categoryCode
+            });
+            await dbContext.SaveChangesAsync();
+
+            HttpResponseMessage response = await _client.DeleteAsync($"/api/products/{productId}/categories/{categoryCode}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            JsonElement body = await IntegrationTestHelpers.ReadJsonBodyAsync(response);
+            body.GetProperty("message").GetString().Should().Be("Produto não encontrado.");
+        }
+
+        [Fact]
+        public async Task Should_Return_BadRequest_When_Category_Is_Not_Associated()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            int productId = await CreateProductInDatabaseAsync("7891234644444");
+            int categoryCode = await CreateCategoryInDatabaseAsync("Lanches");
+
+            HttpResponseMessage response = await _client.DeleteAsync($"/api/products/{productId}/categories/{categoryCode}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            JsonElement body = await IntegrationTestHelpers.ReadJsonBodyAsync(response);
+            body.GetProperty("message").GetString().Should().Be("Categoria inválida");
+        }
+
+        [Fact]
+        public async Task Should_Return_BadRequest_When_Removing_Last_Category()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            int productId = await CreateProductInDatabaseAsync("7891234655555");
+            int categoryCode = await CreateCategoryInDatabaseAsync("Padaria");
+
+            using IServiceScope scope = _factory.Services.CreateScope();
+            AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            dbContext.ProductCategories.Add(new ProductCategory
+            {
+                ProductId = productId,
+                CategoryCode = categoryCode
+            });
+            await dbContext.SaveChangesAsync();
+
+            HttpResponseMessage response = await _client.DeleteAsync($"/api/products/{productId}/categories/{categoryCode}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            JsonElement body = await IntegrationTestHelpers.ReadJsonBodyAsync(response);
+            body.GetProperty("message").GetString().Should().Be("O produto deve ter ao menos 1 categoria");
+        }
+
+        [Fact]
+        public async Task Should_Return_NoContent_When_Removing_Category_From_Product()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            int productId = await CreateProductInDatabaseAsync("7891234666666");
+            int categoryCode1 = await CreateCategoryInDatabaseAsync("Bebidas");
+            int categoryCode2 = await CreateCategoryInDatabaseAsync("Doces");
+
+            using IServiceScope scope = _factory.Services.CreateScope();
+            AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            dbContext.ProductCategories.AddRange(
+                new ProductCategory { ProductId = productId, CategoryCode = categoryCode1 },
+                new ProductCategory { ProductId = productId, CategoryCode = categoryCode2 });
+            await dbContext.SaveChangesAsync();
+
+            HttpResponseMessage response = await _client.DeleteAsync($"/api/products/{productId}/categories/{categoryCode1}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+            using IServiceScope verifyScope = _factory.Services.CreateScope();
+            AppDbContext verifyDbContext = verifyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            bool associationExists = await verifyDbContext.ProductCategories.AnyAsync(x => x.ProductId == productId && x.CategoryCode == categoryCode1);
+
+            associationExists.Should().BeFalse();
+        }
+
         private async Task<int> CreateCategoryInDatabaseAsync(string description = "Bebidas")
         {
             using IServiceScope scope = _factory.Services.CreateScope();

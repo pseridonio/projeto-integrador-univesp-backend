@@ -41,6 +41,13 @@ namespace CafeSystem.Infra.Persistence
                 .AnyAsync(x => x.ProductId == productId && x.CategoryCode == categoryCode, cancellationToken);
         }
 
+        public async Task<int> CountCategoryAssociationsAsync(int productId, CancellationToken cancellationToken = default)
+        {
+            return await _dbContext.ProductCategories
+                .AsNoTracking()
+                .CountAsync(x => x.ProductId == productId, cancellationToken);
+        }
+
         public async Task<Product?> GetActiveByIdNoTrackingAsync(int id, CancellationToken cancellationToken = default)
         {
             Product? product = await _dbContext.Products
@@ -65,6 +72,12 @@ namespace CafeSystem.Infra.Persistence
         public async Task AddCategoryAsync(ProductCategory productCategory, CancellationToken cancellationToken = default)
         {
             await _dbContext.ProductCategories.AddAsync(productCategory, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task RemoveCategoryAsync(ProductCategory productCategory, CancellationToken cancellationToken = default)
+        {
+            _dbContext.ProductCategories.Remove(productCategory);
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
     }
