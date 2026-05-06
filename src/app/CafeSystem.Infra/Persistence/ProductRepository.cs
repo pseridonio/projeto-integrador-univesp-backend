@@ -1,6 +1,7 @@
 ﻿using CafeSystem.Application.Interfaces;
 using CafeSystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace CafeSystem.Infra.Persistence
 {
@@ -46,6 +47,63 @@ namespace CafeSystem.Infra.Persistence
             return await _dbContext.ProductCategories
                 .AsNoTracking()
                 .CountAsync(x => x.ProductId == productId, cancellationToken);
+        }
+
+        public async Task<List<Product>> SearchAsync(int? id, string? description, int? categoryId, string? barcode, bool includeCategories, string? sort, CancellationToken cancellationToken = default)
+        {
+            IQueryable<Product> query = _dbContext.Products
+                .AsNoTracking()
+                .Where(x => !x.IsDeleted);
+
+            if (id.HasValue)
+            {
+                query = query.Where(x => x.Id == id.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(description))
+            {
+                string[] terms = description.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                foreach (string term in terms)
+                {
+                    string searchTerm = term;
+                    query = query.Where(x => EF.Functions.Like(x.Description, $"%{searchTerm}%"));
+                }
+            }
+
+            if (categoryId.HasValue)
+            {
+                query = query.Where(x => x.ProductCategories.Any(pc => pc.CategoryCode == categoryId.Value));
+            }
+
+            if (!string.IsNullOrWhiteSpace(barcode))
+            {
+                query = query.Where(x => x.Barcode == barcode);
+            }
+
+            if (includeCategories)
+            {
+                query = query.Include(x => x.ProductCategories)
+                    .ThenInclude(x => x.Category);
+            }
+
+            if (!string.IsNullOrWhiteSpace(sort))
+            {
+                bool descending = sort.StartsWith('-');
+                string normalizedSort = descending ? sort[1..] : sort;
+
+                query = normalizedSort switch
+                {
+                    "id" => descending ? query.OrderByDescending(x => x.Id) : query.OrderBy(x => x.Id),
+                    "barcode" => descending ? query.OrderByDescending(x => x.Barcode) : query.OrderBy(x => x.Barcode),
+                    "description" => descending ? query.OrderByDescending(x => x.Description) : query.OrderBy(x => x.Description),
+                    "unitPrice" => descending ? query.OrderByDescending(x => x.UnitPrice) : query.OrderBy(x => x.UnitPrice),
+                    "createdAt" => descending ? query.OrderByDescending(x => x.CreatedAt) : query.OrderBy(x => x.CreatedAt),
+                    "updatedAt" => descending ? query.OrderByDescending(x => x.UpdatedAt) : query.OrderBy(x => x.UpdatedAt),
+                    _ => query
+                };
+            }
+
+            return await query.ToListAsync(cancellationToken);
         }
 
         public async Task<Product?> GetActiveByIdNoTrackingAsync(int id, CancellationToken cancellationToken = default)

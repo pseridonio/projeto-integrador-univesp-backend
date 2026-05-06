@@ -452,6 +452,63 @@ namespace CafeSystem.API.IntegrationTests
             associationExists.Should().BeFalse();
         }
 
+        [Fact]
+        public async Task Should_Return_Unauthorized_When_Searching_Products_Without_Token()
+        {
+            HttpResponseMessage response = await _client.GetAsync("/api/products");
+
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+
+        [Fact]
+        public async Task Should_Return_BadRequest_When_Search_Query_Is_Invalid()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            HttpResponseMessage response = await _client.GetAsync("/api/products?sort=invalid");
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        }
+
+        [Fact]
+        public async Task Should_Return_NotFound_When_No_Products_Match_Search()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            HttpResponseMessage response = await _client.GetAsync("/api/products?description=Inexistente");
+
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            JsonElement body = await IntegrationTestHelpers.ReadJsonBodyAsync(response);
+            body.GetProperty("message").GetString().Should().Be("Nenhum produto encontrado");
+        }
+
+        [Fact]
+        public async Task Should_Return_Products_When_Filter_Is_Valid()
+        {
+            await IntegrationTestHelpers.AuthenticateAsAdminAsync(_client);
+
+            int categoryCode = await CreateCategoryInDatabaseAsync("Bebidas");
+            int productId = await CreateProductInDatabaseAsync("7891234677777");
+
+            using IServiceScope scope = _factory.Services.CreateScope();
+            AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            dbContext.ProductCategories.Add(new ProductCategory
+            {
+                ProductId = productId,
+                CategoryCode = categoryCode
+            });
+            await dbContext.SaveChangesAsync();
+
+            HttpResponseMessage response = await _client.GetAsync($"/api/products?id={productId}&description=Produto&categoryId={categoryCode}&barcode=7891234677777&includeCategories=true&sort=-unitPrice");
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            JsonElement body = await IntegrationTestHelpers.ReadJsonBodyAsync(response);
+            body.GetArrayLength().Should().Be(1);
+            body[0].GetProperty("id").GetInt32().Should().Be(productId);
+            body[0].TryGetProperty("categories", out JsonElement categories).Should().BeTrue();
+            categories.GetArrayLength().Should().Be(1);
+        }
+
         private async Task<int> CreateCategoryInDatabaseAsync(string description = "Bebidas")
         {
             using IServiceScope scope = _factory.Services.CreateScope();

@@ -14,6 +14,8 @@ namespace CafeSystem.Application.Interfaces
 
         Task<int> CountCategoryAssociationsAsync(int productId, CancellationToken cancellationToken = default);
 
+        Task<List<Product>> SearchAsync(int? id, string? description, int? categoryId, string? barcode, bool includeCategories, string? sort, CancellationToken cancellationToken = default);
+
         Task<Product?> GetActiveByIdNoTrackingAsync(int id, CancellationToken cancellationToken = default);
 
         Task CreateAsync(Product product, CancellationToken cancellationToken = default);

@@ -11,14 +11,16 @@ namespace CafeSystem.API.Controllers
         private readonly CreateProductHandler _createProductHandler;
         private readonly UpdateProductHandler _updateProductHandler;
         private readonly DeleteProductHandler _deleteProductHandler;
+        private readonly SearchProductsHandler _searchProductsHandler;
         private readonly AddCategoryToProductHandler _addCategoryToProductHandler;
         private readonly RemoveCategoryFromProductHandler _removeCategoryFromProductHandler;
 
-        public ProductsController(CreateProductHandler createProductHandler, UpdateProductHandler updateProductHandler, DeleteProductHandler deleteProductHandler, AddCategoryToProductHandler addCategoryToProductHandler, RemoveCategoryFromProductHandler removeCategoryFromProductHandler)
+        public ProductsController(CreateProductHandler createProductHandler, UpdateProductHandler updateProductHandler, DeleteProductHandler deleteProductHandler, SearchProductsHandler searchProductsHandler, AddCategoryToProductHandler addCategoryToProductHandler, RemoveCategoryFromProductHandler removeCategoryFromProductHandler)
         {
             _createProductHandler = createProductHandler;
             _updateProductHandler = updateProductHandler;
             _deleteProductHandler = deleteProductHandler;
+            _searchProductsHandler = searchProductsHandler;
             _addCategoryToProductHandler = addCategoryToProductHandler;
             _removeCategoryFromProductHandler = removeCategoryFromProductHandler;
         }
@@ -72,6 +74,24 @@ namespace CafeSystem.API.Controllers
             catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
             {
                 return NotFound(new { message = "Produto não encontrado." });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SearchProducts([FromQuery] SearchProductsRequest request, CancellationToken cancellationToken)
+        {
+            try
+            {
+                List<SearchProductsResponse> response = await _searchProductsHandler.HandleAsync(request, cancellationToken);
+                return Ok(response);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "NOT_FOUND")
+            {
+                return NotFound(new { message = "Nenhum produto encontrado" });
             }
         }
 
